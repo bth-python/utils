@@ -4,6 +4,10 @@ version: '3'
 
 silent: true
 
+vars:
+  UTILS_REPO_FILES: https://raw.githubusercontent.com/bth-python/utils/refs/heads/main/student-repo-files
+  UTILS_TMP_FILES: /tmp/tmp-utils/student-repo-files
+
 tasks:
   download-utils:
     desc: "Downloads the utils repo to /tmp/tmp-utils, https://github.com/bth-python/utils"
@@ -26,7 +30,7 @@ tasks:
     desc: "Replaces files in tests/ with files from the utils repository, https://github.com/bth-python/utils"
     cmds:
       - task: download-utils
-      - cp -a /tmp/tmp-utils/tests/. tests
+      - cp -a {{.UTILS_TMP_FILES}}/tests/. tests
       - task: clear-utils
       - echo "Tests downloaded successfully."
 
@@ -35,7 +39,7 @@ tasks:
   download-ruff-config:
     desc: "Downloads the ruff configuration file from the utils repository"
     cmds:
-      - curl -L -o ruff.toml https://raw.githubusercontent.com/bth-python/utils/refs/heads/main/ruff.toml
+      - curl -L -o ruff.toml {{.UTILS_REPO_FILES}}/ruff.toml
       - echo "Ruff configuration downloaded successfully."
 
 
@@ -43,7 +47,7 @@ tasks:
   download-taskfile:
     desc: "Downloads the Taskfile from the utils repository"
     cmds:
-      - curl -L -o Taskfile.yml https://raw.githubusercontent.com/bth-python/utils/refs/heads/main/Taskfile.yml
+      - curl -L -o Taskfile.yml {{.UTILS_REPO_FILES}}/Taskfile.yml
       - echo "Taskfile downloaded successfully."
 
 
