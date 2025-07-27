@@ -61,7 +61,7 @@ jobs:
             }
 
         run: |
-          BRANCH="${{ github.base_name }}"
+          BRANCH="${{ github.base_ref }}"
           echo "📌 Branch: $BRANCH"
 
           LABS=$(echo "$MAP_JSON" | jq -c --arg b "$BRANCH" '.[$b].labs // []')
