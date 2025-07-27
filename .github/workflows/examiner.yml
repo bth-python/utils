@@ -55,11 +55,7 @@ jobs:
       - name: setup-python
         uses: bth-python/utils/.github/actions/setup-python@main
       - name: Run lab test in ${{ matrix.folder }}
-        run: |
-          echo "🔬 Running lab: ${{ matrix.folder }}"
-          ls
-          tree .
-          uv run ${{ matrix.folder }}/lab.py
+        run: uv run ${{ matrix.folder }}/lab.py
 
   run-kmoms:
     needs: [generate-matrix]
@@ -75,8 +71,12 @@ jobs:
       - name: Run kmom test in ${{ matrix.folder }}
         run: |
           echo "🔬 Running kmom: ${{ matrix.folder }}"
-          ls
-          uv run tester ${{ matrix.folder }}
+          uv run tester -f ${{ matrix.folder }}
+
+      - name: Run extra tests in ${{ matrix.folder }}
+        run: |
+          echo "🔬 Running extras: ${{ matrix.folder }}"
+          uv run tester -f -e ${{ matrix.folder }}
 
 
   # run-checks:
