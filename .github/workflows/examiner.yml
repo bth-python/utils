@@ -17,16 +17,16 @@ jobs:
           MAP_JSON: >
             {
               "bth/submit/kmom03": { 
-                "labs": ["src/kmom01/lab1", "src/kmom02/lab2", "src/kmom03/lab3"],
-                "kmoms": ["src/kmom01/convert", "src/kmom02/convert", "src/kmom03/convert"]
+                "labs": ["src/kmom01/lab_01", "src/kmom02/lab_02", "src/kmom03/lab_03"],
+                "kmoms": ["tests/kmom01/convert", "tests/kmom02/convert", "tests/kmom03/convert"]
               },
               "bth/submit/kmom06": { 
-                "labs": ["src/kmom04/lab4", "src/kmom05/lab5", "src/kmom06/lab6"],
-                "kmoms": ["src/kmom04/convert", "src/kmom05/convert", "src/kmom06/convert"]
+                "labs": ["src/kmom04/lab_04", "src/kmom05/lab_05", "src/kmom06/lab_06"],
+                "kmoms": ["tests/kmom04/convert", "tests/kmom05/convert", "tests/kmom06/convert"]
               },
               "bth/submit/kmom10": { 
                 "labs": [],
-                "kmoms": ["src/kmom10/convert"]
+                "kmoms": ["tests/kmom10/convert"]
               }
             }
 
