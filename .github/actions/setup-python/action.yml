@@ -20,6 +20,7 @@ runs:
       run: uv sync --locked --all-extras --dev
 
     - name: Debug context
+      shell: bash
       run: |
         echo "github.ref: ${{ github.ref }}"
         echo "github.head_ref: ${{ github.head_ref }}"
