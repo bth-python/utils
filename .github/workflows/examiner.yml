@@ -24,8 +24,91 @@ jobs:
       - name: Install the project
         run: uv sync --locked --all-extras --dev
 
-      - name: "Run ruff"
-        run: uvx ruff check src
 
-      - name: "Run tests"
-        run: uv run tester -f tests
+
+  generate-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      labs: ${{ steps.set-matrix.outputs.labs }}
+      kmoms: ${{ steps.set-matrix.outputs.kmoms }}
+
+    steps:
+      - name: Extract labs and kmoms based on PR branch
+        id: set-matrix
+        env:
+          MAP_JSON: >
+            {
+              "bth/submit/kmom03": { 
+                "labs": ["src/kmom01/lab1", "src/kmom02/lab2", "src/kmom03/lab3"],
+                "kmoms": ["src/kmom01/convert", "src/kmom02/convert", "src/kmom03/convert"]
+              },
+              "bth/submit/kmom06": { 
+                "labs": ["src/kmom04/lab4", "src/kmom05/lab5", "src/kmom06/lab6"],
+                "kmoms": ["src/kmom04/convert", "src/kmom05/convert", "src/kmom06/convert"]
+              },
+              "bth/submit/kmom10": { 
+                "labs": [],
+                "kmoms": ["src/kmom10/convert"]
+              }
+            }
+
+        run: |
+          BRANCH="${{ github.ref_name }}"
+          echo "📌 Branch: $BRANCH"
+
+          LABS=$(echo "$MAP_JSON" | jq -c --arg b "$BRANCH" '.[$b].labs // []')
+          KMOMS=$(echo "$MAP_JSON" | jq -c --arg b "$BRANCH" '.[$b].kmoms // []')
+
+          echo "✅ Labs: $LABS"
+          echo "✅ Kmoms: $KMOMS"
+
+          echo "labs={\"folder\":$LABS}" >> $GITHUB_OUTPUT
+          echo "kmoms={\"folder\":$KMOMS}" >> $GITHUB_OUTPUT
+
+  run-labs:
+    needs: generate-matrix
+    if: needs.generate-matrix.outputs.labs != '{"folder":[]}'
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix: ${{ fromJson(needs.generate-matrix.outputs.labs) }}
+
+    steps:
+      - name: Run lab test in ${{ matrix.folder }}
+        run: |
+          echo "🔬 Running lab: ${{ matrix.folder }}"
+          uv run ${{ matrix.folder }}/lab.py
+
+  run-kmoms:
+    needs: generate-matrix
+    if: needs.generate-matrix.outputs.kmoms != '{"folder":[]}'
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix: ${{ fromJson(needs.generate-matrix.outputs.kmoms) }}
+
+    steps:
+      - name: Run kmom test in ${{ matrix.folder }}
+        run: |
+          echo "🔬 Running kmom: ${{ matrix.folder }}"
+          uv run tester ${{ matrix.folder }}
+
+
+  # run-checks:
+  #   name: Check student code
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       kmoms: [src]
+  #       labs: []
+  #   steps:
+  #     - name: "Run ruff"
+  #       run: uvx ruff check src
+  #     - name: "Execute Lab"
+  #       run: 
+
+  #         # Hur välja vilka lab och kmom som ska testas?
+  #         # en map med allt förifyllt?
+  #     # get branch ${{ github.ref_name }}
+  #     - name: "Run tests"
+  #       run: uv run tester -f tests
