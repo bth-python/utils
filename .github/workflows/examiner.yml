@@ -4,43 +4,8 @@ on:
   workflow_call:
 
 jobs:
-  setup-python:
-    name: python
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
-        with:
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-
-      - name: "Set up Python"
-        uses: actions/setup-python@v5
-        with:
-          python-version-file: ".python-version"
-
-      - name: Install the project
-        run: uv sync --locked --all-extras --dev
-
-  debug:
-    runs-on: ubuntu-latest
-    needs: setup-python
-    steps:
-      - name: Debug context
-        run: |
-          echo "github.ref: ${{ github.ref }}"
-          echo "github.head_ref: ${{ github.head_ref }}"
-          echo "github.base_ref: ${{ github.base_ref }}"
-          echo "github.event_name: ${{ github.event_name }}"
-          echo "uv --version $(uv --version)"
-          echo "uv run python3 --version $(uv run python3 --version)"
-          echo "uv pip list $(uv pip list)"
-
   generate-matrix:
     runs-on: ubuntu-latest
-    needs: setup-python
     outputs:
       labs: ${{ steps.set-matrix.outputs.labs }}
       kmoms: ${{ steps.set-matrix.outputs.kmoms }}
@@ -79,7 +44,7 @@ jobs:
           echo "kmoms={\"folder\":$KMOMS}" >> $GITHUB_OUTPUT
 
   run-labs:
-    needs: [generate-matrix, setup-python]
+    needs: [generate-matrix]
     if: needs.generate-matrix.outputs.labs != '{"folder":[]}'
     runs-on: ubuntu-latest
 
@@ -87,13 +52,15 @@ jobs:
       matrix: ${{ fromJson(needs.generate-matrix.outputs.labs) }}
 
     steps:
+      - name: setup-python
+        uses: ./.github/actions/setup-python
       - name: Run lab test in ${{ matrix.folder }}
         run: |
           echo "🔬 Running lab: ${{ matrix.folder }}"
           uv run ${{ matrix.folder }}/lab.py
 
   run-kmoms:
-    needs: [generate-matrix, setup-python]
+    needs: [generate-matrix]
     if: needs.generate-matrix.outputs.kmoms != '{"folder":[]}'
     runs-on: ubuntu-latest
 
@@ -101,6 +68,8 @@ jobs:
       matrix: ${{ fromJson(needs.generate-matrix.outputs.kmoms) }}
 
     steps:
+      - name: setup-python
+        uses: ./.github/actions/setup-python
       - name: Run kmom test in ${{ matrix.folder }}
         run: |
           echo "🔬 Running kmom: ${{ matrix.folder }}"

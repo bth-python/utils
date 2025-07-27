@@ -1,0 +1,29 @@
+name: "Setup Python"
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+      with:
+        enable-cache: true
+        cache-dependency-glob: "uv.lock"
+
+    - name: "Set up Python"
+      uses: actions/setup-python@v5
+      with:
+        python-version-file: ".python-version"
+
+    - name: Install the project
+      run: uv sync --locked --all-extras --dev
+
+    - name: Debug context
+        run: |
+          echo "github.ref: ${{ github.ref }}"
+          echo "github.head_ref: ${{ github.head_ref }}"
+          echo "github.base_ref: ${{ github.base_ref }}"
+          echo "github.event_name: ${{ github.event_name }}"
+          echo "uv --version $(uv --version)"
+          echo "uv run python3 --version $(uv run python3 --version)"
+          echo "uv pip list $(uv pip list)"
