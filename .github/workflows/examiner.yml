@@ -57,6 +57,8 @@ jobs:
       - name: Run lab test in ${{ matrix.folder }}
         run: |
           echo "🔬 Running lab: ${{ matrix.folder }}"
+          ls
+          tree .
           uv run ${{ matrix.folder }}/lab.py
 
   run-kmoms:
@@ -73,6 +75,7 @@ jobs:
       - name: Run kmom test in ${{ matrix.folder }}
         run: |
           echo "🔬 Running kmom: ${{ matrix.folder }}"
+          ls
           uv run tester ${{ matrix.folder }}
 
 
