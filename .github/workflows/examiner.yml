@@ -34,9 +34,9 @@ jobs:
           echo "github.head_ref: ${{ github.head_ref }}"
           echo "github.base_ref: ${{ github.base_ref }}"
           echo "github.event_name: ${{ github.event_name }}"
-          echo "uv --version"
-          echo "uv run python3 --version"
-          echo "uv pip list"
+          echo "uv --version $(uv --version)"
+          echo "uv run python3 --version $(uv run python3 --version)"
+          echo "uv pip list $(uv pip list)"
 
   generate-matrix:
     runs-on: ubuntu-latest
@@ -79,7 +79,7 @@ jobs:
           echo "kmoms={\"folder\":$KMOMS}" >> $GITHUB_OUTPUT
 
   run-labs:
-    needs: generate-matrix
+    needs: [generate-matrix, setup-python]
     if: needs.generate-matrix.outputs.labs != '{"folder":[]}'
     runs-on: ubuntu-latest
 
@@ -93,7 +93,7 @@ jobs:
           uv run ${{ matrix.folder }}/lab.py
 
   run-kmoms:
-    needs: generate-matrix
+    needs: [generate-matrix, setup-python]
     if: needs.generate-matrix.outputs.kmoms != '{"folder":[]}'
     runs-on: ubuntu-latest
 
