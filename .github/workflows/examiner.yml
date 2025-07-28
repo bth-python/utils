@@ -55,7 +55,9 @@ jobs:
       - name: setup-python
         uses: bth-python/utils/.github/actions/setup-python@main
       - name: Run lab test in ${{ matrix.folder }}
-        run: uv run ${{ matrix.folder }}/lab.py
+        run: |
+          echo "🔬 Running lab: ${{ matrix.folder }}"
+          uv run ${{ matrix.folder }}/lab.py
 
   run-kmoms:
     needs: [generate-matrix]
