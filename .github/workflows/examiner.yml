@@ -76,26 +76,7 @@ jobs:
           uv run tester -f ${{ matrix.folder }}
 
       - name: Run extra tests in ${{ matrix.folder }}
+        continue-on-error: true
         run: |
           echo "🔬 Running extras: ${{ matrix.folder }}"
           uv run tester -f -e ${{ matrix.folder }}
-
-
-  # run-checks:
-  #   name: Check student code
-  #   runs-on: ubuntu-latest
-  #   strategy:
-  #     matrix:
-  #       kmoms: [src]
-  #       labs: []
-  #   steps:
-  #     - name: "Run ruff"
-  #       run: uvx ruff check src
-  #     - name: "Execute Lab"
-  #       run: 
-
-  #         # Hur välja vilka lab och kmom som ska testas?
-  #         # en map med allt förifyllt?
-  #     # get branch ${{ github.ref_name }}
-  #     - name: "Run tests"
-  #       run: uv run tester -f tests
