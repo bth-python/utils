@@ -1,0 +1,40 @@
+name: Decider Workflow
+
+on:
+  workflow_call:
+    inputs:
+      event_name:
+        required: true
+        type: string
+      pr_action:
+        required: false
+        type: string
+      review_state:
+        required: false
+        type: string
+
+jobs:
+  decide:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Decide which workflow to run
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT_NAME: ${{ inputs.event_name }}
+          PR_ACTION: ${{ inputs.pr_action }}
+          REVIEW_STATE: ${{ inputs.review_state }}
+        run: |
+          echo "EVENT_NAME: $EVENT_NAME"
+          if [ "$EVENT_NAME" = "pull_request" ] && [ "$PR_ACTION" = "opened" ]; then
+            echo "Triggering workflow for PR opened"
+            gh workflow run workflow-for-pr-opened.yml
+          elif [ "$EVENT_NAME" = "pull_request_review" ] && [ "$REVIEW_STATE" = "submitted" ]; then
+            echo "Triggering workflow for PR review submitted"
+            gh workflow run workflow-for-pr-review-submitted.yml
+          elif [ "$EVENT_NAME" = "push" ]; then
+            echo "Triggering workflow for push to bth/submit/*"
+            gh workflow run workflow-for-push.yml
+          else
+            echo "Other event, or manually triggered"
+            gh workflow run workflow-for-other.yml
+          fi
