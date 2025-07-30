@@ -18,19 +18,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Create comment
-        env:
-          REVIEW: ${{ fromJson(inputs.review) }}
         id: created_comment
         run: |
           cat << EOF >> $GITHUB_OUTPUT
           myoutput<<EOM
-          Review State: ${{ env.REVIEW.state }}
-          Review URL: ${{ env.REVIEW.html_url }}
+          Review State: ${{ fromJson(inputs.review).state }}
+          Review URL: ${{ fromJson(inputs.review).html_url }}
 
           Review Comment:
-          ${{ env.REVIEW.body }}
+          ${{ fromJson(inputs.review).body }}
 
-          Reviewer: ${{ env.REVIEW.user.login }}
+          Reviewer: ${{ fromJson(inputs.review).user.login }}
           EOM
           EOF
 
