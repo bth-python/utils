@@ -27,13 +27,16 @@ jobs:
           echo "EVENT_NAME: $EVENT_NAME"
           if [ "$EVENT_NAME" = "pull_request" ] && [ "$PR_ACTION" = "opened" ]; then
             echo "Triggering workflow for PR opened"
-            gh workflow run workflow-for-pr-opened.yml
+            gh workflow run bth-python/utils/.github/workflows/examiner.yml@main
+
           elif [ "$EVENT_NAME" = "pull_request_review" ] && [ "$REVIEW_STATE" = "submitted" ]; then
             echo "Triggering workflow for PR review submitted"
             gh workflow run workflow-for-pr-review-submitted.yml
+
           elif [ "$EVENT_NAME" = "push" ]; then
             echo "Triggering workflow for push to bth/submit/*"
             gh workflow run workflow-for-push.yml
+
           else
             echo "Other event, or manually triggered"
             gh workflow run workflow-for-other.yml
