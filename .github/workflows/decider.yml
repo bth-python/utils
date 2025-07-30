@@ -14,32 +14,21 @@ on:
         type: string
 
 jobs:
-  decide:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+  on-pr-opened:
+    if: ${{ inputs.event_name == 'pull_request' && inputs.pr_action == 'opened' }}
+    uses: bth-python/utils/.github/workflows/examiner.yml@main
 
-      - name: Decide which workflow to run
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          EVENT_NAME: ${{ inputs.event_name }}
-          PR_ACTION: ${{ inputs.pr_action }}
-          REVIEW_STATE: ${{ inputs.review_state }}
-        run: |
-          echo "EVENT_NAME: $EVENT_NAME"
-          if [ "$EVENT_NAME" = "pull_request" ] && [ "$PR_ACTION" = "opened" ]; then
-            echo "Triggering workflow for PR opened"
-            gh workflow run -R bth-python/utils examiner.yml
+  on-pr-review-submitted:
+    if: ${{ inputs.event_name == 'pull_request_review' && inputs.review_state == 'submitted' }}
+    uses: ./.github/workflows/workflow-for-pr-review-submitted.yml
 
-          elif [ "$EVENT_NAME" = "pull_request_review" ] && [ "$REVIEW_STATE" = "submitted" ]; then
-            echo "Triggering workflow for PR review submitted"
-            gh workflow run workflow-for-pr-review-submitted.yml
+  on-push-bth-submit:
+    if: ${{ inputs.event_name == 'push' }}
+    uses: ./.github/workflows/workflow-for-push.yml
 
-          elif [ "$EVENT_NAME" = "push" ]; then
-            echo "Triggering workflow for push to bth/submit/*"
-            gh workflow run workflow-for-push.yml
-
-          else
-            echo "Other event, or manually triggered"
-            gh workflow run workflow-for-other.yml
-          fi
+  on-other:
+    if:
+      ${{ !(inputs.event_name == 'pull_request' && inputs.pr_action == 'opened')
+      && !(inputs.event_name == 'pull_request_review' && inputs.review_state == 'submitted')
+      && !(inputs.event_name == 'push') }}
+    uses: ./.github/workflows/workflow-for-other.yml
