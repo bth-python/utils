@@ -1,0 +1,27 @@
+name: "Resolve Assignment from Branch"
+description: "Extracts an assignment ID from a JSON variable based on the current branch name."
+inputs:
+  available_assignments:
+    description: "JSON object mapping branch names to assignment IDs"
+    required: true
+outputs:
+  assignment:
+    description: "The assignment ID corresponding to the current branch"
+    value: ${{ steps.get-assignment.outputs.assignment }}
+runs:
+  using: "composite"
+  steps:
+    - name: Extract assignment from org variable
+      id: get-assignment
+      shell: bash
+      run: |
+        echo "Branch: $GITHUB_REF_NAME"
+        echo "${{ inputs.available_assignments }}"
+        assignment_id=$(echo '${{ inputs.available_assignments }}' | jq -r --arg branch "$GITHUB_REF_NAME" '.[$branch]')
+        echo "assignment=$assignment_id"
+        if [[ "$assignment_id" == "null" || -z "$assignment_id" ]]; then
+          echo "No assignment found for branch: $GITHUB_REF_NAME"
+          exit 1
+        fi
+
+        echo "assignment=$assignment_id" >> "$GITHUB_OUTPUT"

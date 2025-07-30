@@ -1,0 +1,61 @@
+name: "Update Canvas"
+description: "Update Canvas with grade and comment"
+inputs:
+  grade:
+    description: 'Submission grade'
+    required: true
+  comment:
+    description: 'Submission comment'
+    required: true
+  course_id:
+    required: true
+    description: 'Canvas CourseID'
+  assignments_id:
+    required: true
+    description: 'Canvas AssignmentID'
+  canvas_api_token:
+    required: true
+    description: 'Canvas API token'
+runs:
+  using: "composite"
+  steps:
+    - name: Notify Canvas API
+      shell: bash
+      env:
+        COURSE_ID: ${{ inputs.course_id }}
+        ASSIGNMENT_ID: ${{ inputs.assignment_id }}
+      run: |
+        echo "Notifying Canvas for assignment ${{  inputs.assignment_id  }}..."
+        echo "course_ID: ${{ inputs.course_id }}"
+        echo "grade: ${{ inputs.grade }}"
+        echo "grade: ${{ inputs.comment }}"
+
+        echo \
+        "https://bth.instructure.com/api/v1/courses/${COURSE_ID}/assignments/${ASSIGNMENT_ID}/submissions/update_grades" \
+        -H "Authorization: Bearer ${{ inputs.canvas_api_token }}" \
+        # -H "Content-Type: application/json"
+        #   curl -X POST \
+
+
+
+    # Review state:
+    # ${{ github.event.review.state }}
+    # (e.g., approved, changes_requested, commented)
+
+    # Review body (the comment):
+    # ${{ github.event.review.body }}
+
+    # Review ID:
+    # ${{ github.event.review.id }}
+
+    # Review HTML URL (link to the review):
+    # ${{ github.event.review.html_url }}
+
+    # Review author:
+    # ${{ github.event.review.user.login }}
+
+    # Submitted at:
+    # ${{ github.event.review.submitted_at }}
+
+    # Pull request info:
+    # All usual PR info is available under ${{ github.event.pull_request.* }}

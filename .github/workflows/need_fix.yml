@@ -1,0 +1,49 @@
+on:
+  workflow_call:
+    # pull_request_review:
+    #   types: [submitted]
+    inputs:
+      review:
+        required: true
+        type: string
+      course_id:
+        required: true
+        type: string
+      available_assignments:
+        required: true
+        type: string
+
+jobs:
+  on-changes-requested:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create comment
+        env:
+          REVIEW: ${{ fromJson(inputs.review) }}
+        id: created_comment
+        run: |
+          cat << EOF >> $GITHUB_OUTPUT
+          myoutput<<EOM
+          Review State: ${{ env.REVIEW.state }}
+          Review URL: ${{ env.REVIEW.html_url }}
+
+          Review Comment:
+          ${{ env.REVIEW.body }}
+
+          Reviewer: ${{ env.REVIEW.user.login }}
+          EOM
+          EOF
+
+      - uses: bth-python/get-assignment-id@main
+        id: resolve
+        with:
+          assignments: ${{ inputs.available_assignments }}
+
+      - name: Update Canvas with need to fix
+        uses: bth-python/utils/.github/actions/update-canvas@main
+        with:
+          grade: "Ux"
+          comment: "${{ steps.created_comment.outputs.myoutput }}"
+          canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
+          course_id: ${{inputs.course_id}}
+          assignment: ${{ steps.resolve.outputs.assignment }}
