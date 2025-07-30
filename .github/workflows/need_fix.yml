@@ -34,7 +34,7 @@ jobs:
           EOM
           EOF
 
-      - uses: bth-python/get-assignment-id@main
+      - uses: bth-python/utils/.github/actions/get-assignment-id@main
         id: resolve
         with:
           assignments: ${{ inputs.available_assignments }}
