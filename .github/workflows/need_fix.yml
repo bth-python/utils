@@ -36,7 +36,7 @@ jobs:
         id: resolve
         with:
           available_assignments: ${{ inputs.available_assignments }}
-          pull_request: ${{ inputs.event.pull_request }}
+          pull_request: ${{ toJson(fromJson(inputs.event).pull_request) }}
 
       - name: Update Canvas with need to fix
         uses: bth-python/utils/.github/actions/update-canvas@main
