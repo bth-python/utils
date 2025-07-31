@@ -3,6 +3,9 @@ name: Reusable Deploy
 on:
   workflow_call:
     inputs:
+      pr_action:
+        required: true
+        type: string
       event:
         required: true
         type: string
@@ -10,6 +13,9 @@ on:
         required: true
         type: string
       available_assignments:
+        required: true
+        type: string
+      kmom_paths:
         required: true
         type: string
 
@@ -23,29 +29,12 @@ jobs:
     steps:
       - name: Extract labs and kmoms based on PR branch
         id: set-matrix
-        env:
-          MAP_JSON: >
-            {
-              "bth/submit/kmom03": { 
-                "labs": ["src/kmom01/lab_01", "src/kmom02/lab_02", "src/kmom03/lab_03"],
-                "kmoms": ["tests/kmom01/convert", "tests/kmom02/convert", "tests/kmom03/convert"]
-              },
-              "bth/submit/kmom06": { 
-                "labs": ["src/kmom04/lab_04", "src/kmom05/lab_05", "src/kmom06/lab_06"],
-                "kmoms": ["tests/kmom04/convert", "tests/kmom05/convert", "tests/kmom06/convert"]
-              },
-              "bth/submit/kmom10": { 
-                "labs": [],
-                "kmoms": ["tests/kmom10/convert"]
-              }
-            }
-
         run: |
           BRANCH="${{ github.base_ref }}"
           echo "📌 Branch: $BRANCH"
 
-          LABS=$(echo "$MAP_JSON" | jq -c --arg b "$BRANCH" '.[$b].labs // []')
-          KMOMS=$(echo "$MAP_JSON" | jq -c --arg b "$BRANCH" '.[$b].kmoms // []')
+          LABS=$(echo "${{ inputs.kmom_paths }}" | jq -c --arg b "$BRANCH" '.[$b].labs // []')
+          KMOMS=$(echo "${{ inputs.kmom_paths }}" | jq -c --arg b "$BRANCH" '.[$b].kmoms // []')
 
           echo "✅ Labs: $LABS"
           echo "✅ Kmoms: $KMOMS"
@@ -64,6 +53,10 @@ jobs:
     steps:
       - name: setup-python
         uses: bth-python/utils/.github/actions/setup-python@main
+
+      - name: "Validate code"
+        run: uvx ruff check ${{ matrix.folder }}
+
       - name: Run lab test in ${{ matrix.folder }}
         run: |
           echo "🔬 Running lab: ${{ matrix.folder }}"
@@ -80,6 +73,10 @@ jobs:
     steps:
       - name: setup-python
         uses: bth-python/utils/.github/actions/setup-python@main
+
+      - name: "Validate code"
+        run: uvx ruff check ${{ matrix.folder }}
+
       - name: Run kmom test in ${{ matrix.folder }}
         run: |
           echo "🔬 Running kmom: ${{ matrix.folder }}"
@@ -104,7 +101,7 @@ jobs:
         run: |
           cat << EOF >> $GITHUB_OUTPUT
           myoutput<<EOM
-          Pull Request opened
+          Pull Request action: ${{ inputs.pr_action }}
           Status:
           $OUTCOME
 
@@ -119,7 +116,7 @@ jobs:
           available_assignments: ${{ inputs.available_assignments }}
           pull_request: ${{ toJson(fromJson(inputs.event).pull_request) }}
 
-      - name: Update Canvas with need to fix
+      - name: Update Canvas result from tests
         uses: bth-python/utils/.github/actions/update-canvas@main
         with:
           grade: "$GRADE"

@@ -21,6 +21,9 @@ on:
       available_assignments:
         required: true
         type: string
+      kmom_paths:
+        required: true
+        type: string
 
 jobs:
   # on-pr-closed:
@@ -35,9 +38,11 @@ jobs:
     if: ${{ inputs.event_name == 'pull_request' }}
     uses: bth-python/utils/.github/workflows/examiner.yml@main
     with:
+      pr_action: ${{ inputs.pr_action  }}
       event: ${{ inputs.event }}
       course_id: ${{ inputs.course_id }}
       available_assignments: ${{ inputs.available_assignments }}
+      kmom_paths: ${{ inputs.kmom_paths }}
 
   on-need-fix:
     if: ${{ inputs.event_name == 'pull_request_review' && inputs.review_state == 'changes_requested' }}
