@@ -3,7 +3,7 @@ on:
     # pull_request_review:
     #   types: [submitted]
     inputs:
-      review:
+      event:
         required: true
         type: string
       course_id:
@@ -22,13 +22,13 @@ jobs:
         run: |
           cat << EOF >> $GITHUB_OUTPUT
           myoutput<<EOM
-          Review State: ${{ fromJson(inputs.review).state }}
-          Review URL: ${{ fromJson(inputs.review).html_url }}
+          Review State: ${{ fromJson(inputs.event).review.state }}
+          Review URL: ${{ fromJson(inputs.event).review.html_url }}
 
           Review Comment:
-          ${{ fromJson(inputs.review).body }}
+          ${{ fromJson(inputs.event).review.body }}
 
-          Reviewer: ${{ fromJson(inputs.review).user.login }}
+          Reviewer: ${{ fromJson(inputs.event).review.user.login }}
           EOM
           EOF
 
@@ -36,6 +36,7 @@ jobs:
         id: resolve
         with:
           available_assignments: ${{ inputs.available_assignments }}
+          pull_request: ${{ inputs.event.pull_request }}
 
       - name: Update Canvas with need to fix
         uses: bth-python/utils/.github/actions/update-canvas@main

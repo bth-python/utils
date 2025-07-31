@@ -4,6 +4,9 @@ inputs:
   available_assignments:
     description: "JSON object mapping branch names to assignment IDs"
     required: true
+  pull_request:
+    description: "Pull request event from GitHub"
+    required: true
 outputs:
   assignment:
     description: "The assignment ID corresponding to the current branch"
@@ -15,12 +18,12 @@ runs:
       id: get-assignment
       shell: bash
       run: |
-        echo "Branch: $GITHUB_REF_NAME"
+        echo "Branch: ${{ fromJson(pull_request).base.ref }}"
         echo "${{ inputs.available_assignments }}"
-        assignment_id=$(echo '${{ inputs.available_assignments }}' | jq -r --arg branch "$GITHUB_REF_NAME" '.[$branch]')
+        assignment_id=$(echo '${{ inputs.available_assignments }}' | jq -r --arg branch "${{ fromJson(pull_request).base.ref }}" '.[$branch]')
         echo "assignment=$assignment_id"
         if [[ "$assignment_id" == "null" || -z "$assignment_id" ]]; then
-          echo "No assignment found for branch: $GITHUB_REF_NAME"
+          echo "No assignment found for branch: ${{ fromJson(pull_request).base.ref }}"
           exit 1
         fi
 
