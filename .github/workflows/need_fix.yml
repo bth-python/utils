@@ -35,7 +35,7 @@ jobs:
       - uses: bth-python/utils/.github/actions/get-assignment-id@main
         id: resolve
         with:
-          assignments: ${{ inputs.available_assignments }}
+          available_assignments: ${{ inputs.available_assignments }}
 
       - name: Update Canvas with need to fix
         uses: bth-python/utils/.github/actions/update-canvas@main
