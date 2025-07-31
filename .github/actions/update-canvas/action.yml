@@ -28,7 +28,7 @@ runs:
         echo "Notifying Canvas for assignment ${{  inputs.assignment_id  }}..."
         echo "course_ID: ${{ inputs.course_id }}"
         echo "grade: ${{ inputs.grade }}"
-        echo "grade: ${{ inputs.comment }}"
+        echo "comment: ${{ inputs.comment }}"
 
         echo \
         "https://bth.instructure.com/api/v1/courses/${COURSE_ID}/assignments/${ASSIGNMENT_ID}/submissions/update_grades" \
