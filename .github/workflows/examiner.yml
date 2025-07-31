@@ -105,7 +105,6 @@ jobs:
           Status:
           $OUTCOME
 
-
           PR URL: ${{ fromJson(inputs.event).pull_request.html_url }}
           EOM
           EOF
