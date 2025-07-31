@@ -1,0 +1,50 @@
+on:
+  workflow_call:
+    # pull_request_review:
+    #   types: [submitted]
+    inputs:
+      event:
+        required: true
+        type: string
+      pr_action:
+        required: false
+        type: string
+      course_id:
+        required: true
+        type: string
+      available_assignments:
+        required: true
+        type: string
+
+jobs:
+  on-changes-requested:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create comment
+        id: created_comment
+        run: |
+          cat << EOF >> $GITHUB_OUTPUT
+          myoutput<<EOM
+          Pull Request Action: ${{ inputs.pr_action }}
+          Status:
+          Pull request was closed.
+
+          User who closed: ${{ fromJson(inputs.event).sender }}
+          PR URL: ${{ fromJson(inputs.event).pull_request.html_url }}
+          EOM
+          EOF
+
+      - uses: bth-python/utils/.github/actions/get-assignment-id@main
+        id: resolve
+        with:
+          available_assignments: ${{ inputs.available_assignments }}
+          pull_request: ${{ toJson(fromJson(inputs.event).pull_request) }}
+
+      - name: Update Canvas with closed PR
+        uses: bth-python/utils/.github/actions/update-canvas@main
+        with:
+          grade: "Ux"
+          comment: "${{ steps.created_comment.outputs.myoutput }}"
+          canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
+          course_id: ${{inputs.course_id}}
+          assignments_id: ${{ steps.resolve.outputs.assignment }}

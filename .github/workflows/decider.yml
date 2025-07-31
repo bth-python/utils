@@ -26,13 +26,14 @@ on:
         type: string
 
 jobs:
-  # on-pr-closed:
-  #   if: ${{ inputs.event_name == 'pull_request' && inputs.pr_action == 'closed' }}
-  #   uses: bth-python/utils/.github/workflows/closed_pr.yml@main
-  #   with:
-  #     event: ${{ inputs.event }}
-  #     course_id: ${{ inputs.course_id }}
-  #     available_assignments: ${{ inputs.available_assignments }}
+  on-pr-closed:
+    if: ${{ inputs.event_name == 'pull_request' && inputs.pr_action == 'closed' }}
+    uses: bth-python/utils/.github/workflows/closed_pr.yml@main
+    with:
+      pr_action: ${{ inputs.pr_action }}
+      event: ${{ inputs.event }}
+      course_id: ${{ inputs.course_id }}
+      available_assignments: ${{ inputs.available_assignments }}
 
   on-pr-opened:
     if: ${{ inputs.event_name == 'pull_request' }}
