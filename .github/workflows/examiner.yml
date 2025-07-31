@@ -93,7 +93,7 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     env:
-      GRADE: ${{ (needs.run-kmoms.result == 'success' && needs.run-labs.result == 'success') && 'G' || 'Ux' }}
+      GRADE: ${{ (needs.run-kmoms.result == 'success' && needs.run-labs.result == 'success') && 'PG' || 'Ux' }}
       OUTCOME: ${{ (needs.run-kmoms.result == 'success' && needs.run-labs.result == 'success') && 'All tests have passed.' || 'Something failed, look through logs to see what you need to fix.' }}
     steps:
       - name: Create comment
