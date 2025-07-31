@@ -26,7 +26,10 @@ jobs:
   on-pr-opened:
     if: ${{ inputs.event_name == 'pull_request' && inputs.pr_action == 'opened' }}
     uses: bth-python/utils/.github/workflows/examiner.yml@main
-
+    with:
+      event: ${{ inputs.event }}
+      course_id: ${{ inputs.course_id }}
+      available_assignments: ${{ inputs.available_assignments }}
   on-need-fix:
     if: ${{ inputs.event_name == 'pull_request_review' && inputs.review_state == 'changes_requested' }}
     uses: bth-python/utils/.github/workflows/need_fix.yml@main

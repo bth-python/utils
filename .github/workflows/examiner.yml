@@ -2,6 +2,16 @@ name: Reusable Deploy
 
 on:
   workflow_call:
+    inputs:
+      event:
+        required: true
+        type: string
+      course_id:
+        required: true
+        type: string
+      available_assignments:
+        required: true
+        type: string
 
 jobs:
   generate-matrix:
@@ -80,3 +90,40 @@ jobs:
         run: |
           echo "🔬 Running extras: ${{ matrix.folder }}"
           uv run tester -f -e ${{ matrix.folder }}
+
+  update-canvas:
+    needs: [run-kmoms, run-labs]
+    runs-on: ubuntu-latest
+    if: always()
+    env:
+      GRADE: ${{ (needs.run-kmoms.result == 'success' && needs.run-labs.result == 'success') && 'G' || 'Ux' }}
+      OUTCOME: ${{ (needs.run-kmoms.result == 'success' && needs.run-labs.result == 'success') && 'All tests have passed.' || 'Something failed, look through logs to see what you need to fix.' }}
+    steps:
+      - name: Create comment
+        id: created_comment
+        run: |
+          cat << EOF >> $GITHUB_OUTPUT
+          myoutput<<EOM
+          Pull Request opened
+          Status:
+          $OUTCOME
+
+
+          PR URL: ${{ fromJson(inputs.event).pull_request.html_url }}
+          EOM
+          EOF
+
+      - uses: bth-python/utils/.github/actions/get-assignment-id@main
+        id: resolve
+        with:
+          available_assignments: ${{ inputs.available_assignments }}
+          pull_request: ${{ toJson(fromJson(inputs.event).pull_request) }}
+
+      - name: Update Canvas with need to fix
+        uses: bth-python/utils/.github/actions/update-canvas@main
+        with:
+          grade: "$GRADE"
+          comment: "${{ steps.created_comment.outputs.myoutput }}"
+          canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
+          course_id: ${{inputs.course_id}}
+          assignments_id: ${{ steps.resolve.outputs.assignment }}
