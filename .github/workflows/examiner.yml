@@ -55,7 +55,7 @@ jobs:
         uses: bth-python/utils/.github/actions/setup-python@main
 
       - name: "Validate code"
-        run: uvx ruff check ${{ matrix.folder }}
+        run: uv run ruff check ${{ matrix.folder }}
 
       - name: Run lab test in ${{ matrix.folder }}
         run: |
@@ -75,7 +75,7 @@ jobs:
         uses: bth-python/utils/.github/actions/setup-python@main
 
       - name: "Validate code"
-        run: uvx ruff check ${{ matrix.folder }}
+        run: uv run ruff check ${{ replace(matrix.folder, 'tests', 'src') }}
 
       - name: Run kmom test in ${{ matrix.folder }}
         run: |
