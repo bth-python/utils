@@ -33,8 +33,8 @@ jobs:
           BRANCH="${{ github.base_ref }}"
           echo "📌 Branch: $BRANCH"
 
-          LABS=$(echo "${{ inputs.kmom_paths }}" | jq -c --arg b "$BRANCH" '.[$b].labs // []')
-          KMOMS=$(echo "${{ inputs.kmom_paths }}" | jq -c --arg b "$BRANCH" '.[$b].kmoms // []')
+          LABS=$(echo '${{ inputs.kmom_paths }}' | jq -c --arg b "$BRANCH" '.[$b].labs // []')
+          KMOMS=$(echo '${{ inputs.kmom_paths }}' | jq -c --arg b "$BRANCH" '.[$b].kmoms // []')
 
           echo "✅ Labs: $LABS"
           echo "✅ Kmoms: $KMOMS"
