@@ -36,7 +36,7 @@ jobs:
       available_assignments: ${{ inputs.available_assignments }}
 
   on-pr-opened:
-    if: ${{ inputs.event_name == 'pull_request' }}
+    if: ${{ inputs.event_name == 'pull_request' && (inputs.pr_action == 'opened' || inputs.pr_action == 'synchronize')}}
     uses: bth-python/utils/.github/workflows/examiner.yml@main
     with:
       pr_action: ${{ inputs.pr_action  }}
