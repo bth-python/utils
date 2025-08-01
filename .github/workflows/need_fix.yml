@@ -14,7 +14,7 @@ on:
         type: string
 
 jobs:
-  on-changes-requested:
+  report-requested-changes-to-canvas:
     runs-on: ubuntu-latest
     steps:
       - name: Create comment
