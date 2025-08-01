@@ -1,0 +1,132 @@
+name: Grade After PR Merge
+
+on:
+  workflow_call:
+    inputs:
+      pr_action:
+        required: true
+        type: string
+      event:
+        required: true
+        type: string
+      course_id:
+        required: true
+        type: string
+      available_assignments:
+        required: true
+        type: string
+
+jobs:
+  resolve-assignment:
+    name: Resolve Assignment from Branch
+    runs-on: ubuntu-latest
+    outputs:
+      assignment: ${{ steps.get-assignment.outputs.assignment }}
+    steps:
+      - name: Extract assignment from org variable
+        id: get-assignment
+        run: |
+          echo "Branch: $GITHUB_REF_NAME"
+          echo "${{ inputs.available_assignments }}"
+          assignment_id=$(echo '${{ inputs.available_assignments }}' | jq -r --arg branch "$GITHUB_REF_NAME" '.[$branch]')
+          echo "assignment=$assignment_id"
+          if [[ "$assignment_id" == "null" || -z "$assignment_id" ]]; then
+            echo "No assignment found for branch: $GITHUB_REF_NAME"
+            exit 1
+          fi
+
+          echo "assignment=$assignment_id" >> "$GITHUB_OUTPUT"
+
+  check-authorization:
+    name: Check PR Merger Authorization
+    runs-on: ubuntu-latest
+    needs: resolve-assignment
+    outputs:
+      authorized: ${{ steps.verify.outputs.authorized }}
+      merged_by: ${{ steps.get-pr.outputs.merged_by }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install GitHub CLI
+        run: sudo apt-get install gh -y
+
+      - name: Get PR that triggered this push
+        id: get-pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_JSON=$(gh pr list --state merged --base "$GITHUB_REF_NAME" --limit 1 --json mergedBy)
+          echo "$PR_JSON"
+
+          merged_by=$(echo "$PR_JSON" | jq -r '.[0].mergedBy.login')
+          if [[ -z "$merged_by" || "$merged_by" == "null" ]]; then
+            echo "No merger found"
+            exit 1
+          fi
+
+          echo "merged_by=$merged_by" >> $GITHUB_OUTPUT
+
+      - name: Check if user is in 'teacher' team
+        id: verify
+        env:
+          GH_TOKEN: ${{ secrets.READ_ORG_TOKEN }}
+        run: |
+          user="${{ steps.get-pr.outputs.merged_by }}"
+          echo "Checking membership for $user..."
+          echo "$(gh api /orgs/bth-python/teams --jq '.[].slug')"
+          status=$(gh api orgs/bth-python/teams/teacher/memberships/$user --jq '.state' || echo "not_found")
+          echo "$status"
+          if [[ "$status" == "active" ]]; then
+            echo "authorized=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "User is not authorized"
+            echo "authorized=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  report-closed-pr-to-canvas:
+    name: "Update canvas with merged PR"
+    runs-on: ubuntu-latest
+    needs: [resolve-assignment, check-authorization]
+    env:
+      GRADE: ${{ (needs.check-authorization.outputs.authorized) && 'G' || 'U' }}
+      STATUS: ${{ ((needs.check-authorization.outputs.authorized)) && 'Merge was done by authorized user.' || 'Someone other than authorized teacher tried to merge PR. Contact course responsible.' }}
+    steps:
+      - name: Get merge commit message
+        id: merge-commit-msg
+        run: |
+          SHA="${{ github.event.pull_request.merge_commit_sha }}"
+          MSG=$(curl -sSL \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/commits/$SHA" \
+            | jq -r .commit.message)
+          echo "commit_msg=$MSG" >> "$GITHUB_OUTPUT"
+
+      - name: Create comment
+        id: created_comment
+        run: |
+          cat << EOF >> $GITHUB_OUTPUT
+          myoutput<<EOM
+          Pull Request Action: ${{ inputs.pr_action }}
+          Status: $STATUS
+          "${{ steps.merge-commit-msg.outputs.commit_msg }}"
+
+          User who merged: ${{ fromJson(inputs.event).sender.login }}
+          PR URL: ${{ fromJson(inputs.event).pull_request.html_url }}
+          EOM
+          EOF
+
+      - uses: bth-python/utils/.github/actions/get-assignment-id@main
+        id: resolve
+        with:
+          available_assignments: ${{ inputs.available_assignments }}
+          pull_request: ${{ toJson(fromJson(inputs.event).pull_request) }}
+
+      - name: Update Canvas with closed PR
+        uses: bth-python/utils/.github/actions/update-canvas@main
+        with:
+          grade: $GRADE
+          comment: "${{ steps.created_comment.outputs.myoutput }}"
+          canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
+          course_id: ${{inputs.course_id}}
+          assignments_id: ${{ steps.resolve.outputs.assignment }}

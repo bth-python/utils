@@ -26,6 +26,16 @@ on:
         type: string
 
 jobs:
+  on-push-bth-submit:
+    if: ${{ inputs.event_name == 'pull_request' && fromJson(inputs.event).pull_request.merged == true }}
+    uses: bth-python/utils/.github/workflows/on_merge.yml@main
+    with:
+      course_id: ${{ inputs.course_id }}
+      available_assignments: ${{ inputs.available_assignments }}
+      pr_action: ${{ inputs.pr_action }}
+      event: ${{ inputs.event }}
+    secrets: inherit
+
   on-pr-closed:
     if: ${{ inputs.event_name == 'pull_request' && inputs.pr_action == 'closed' }}
     uses: bth-python/utils/.github/workflows/closed_pr.yml@main
@@ -53,10 +63,6 @@ jobs:
       course_id: ${{ inputs.course_id }}
       available_assignments: ${{ inputs.available_assignments }}
     secrets: inherit
-
-  # on-push-bth-submit:
-  #   if: ${{ inputs.event_name == 'push' }}
-  #   uses: ./.github/workflows/workflow-for-push.yml
 
   # on-other:
   #   if:
