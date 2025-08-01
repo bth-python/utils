@@ -92,15 +92,17 @@ jobs:
       GRADE: ${{ (needs.check-authorization.outputs.authorized) && 'G' || 'U' }}
       STATUS: ${{ ((needs.check-authorization.outputs.authorized)) && 'Merge was done by authorized user.' || 'Someone other than authorized teacher tried to merge PR. Contact course responsible.' }}
     steps:
-      - name: Get merge commit message
-        id: merge-commit-msg
+      - name: Get latest approved review message
+        id: get_review
         run: |
-          SHA="${{ github.event.pull_request.merge_commit_sha }}"
-          MSG=$(curl -sSL \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/commits/$SHA" \
-            | jq -r .commit.message)
-          echo "commit_msg=$MSG" >> "$GITHUB_OUTPUT"
+          reviews_url="https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews"
+          reviews=$(curl -sSL -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "$reviews_url")
+          # Get the latest approved review body (if any)
+          latest=$(echo "$reviews" | jq -r '[.[] | select(.state == "APPROVED")][-1].body')
+          # Save as output for next step
+          echo "latest_approved_review<<EOF" >> $GITHUB_OUTPUT
+          echo "$latest" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create comment
         id: created_comment
@@ -109,7 +111,7 @@ jobs:
           myoutput<<EOM
           Pull Request Action: ${{ inputs.pr_action }}
           Status: $STATUS
-          "${{ steps.merge-commit-msg.outputs.commit_msg }}"
+          "${{ steps.get_review.outputs.latest_approved_review }}"
 
           User who merged: ${{ fromJson(inputs.event).sender.login }}
           PR URL: ${{ fromJson(inputs.event).pull_request.html_url }}
