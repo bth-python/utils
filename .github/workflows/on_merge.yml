@@ -3,9 +3,6 @@ name: Grade After PR Merge
 on:
   workflow_call:
     inputs:
-      pr_action:
-        required: true
-        type: string
       event:
         required: true
         type: string
@@ -109,7 +106,7 @@ jobs:
         run: |
           cat << EOF >> $GITHUB_OUTPUT
           myoutput<<EOM
-          Pull Request Action: ${{ inputs.pr_action }}
+          Pull Request Action: Merged
           Status: $STATUS
           "${{ steps.get_review.outputs.latest_approved_review }}"
 
