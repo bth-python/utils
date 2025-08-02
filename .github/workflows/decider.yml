@@ -48,6 +48,7 @@ jobs:
       course_id: ${{ inputs.course_id }}
       available_assignments: ${{ inputs.available_assignments }}
       student_id: ${{ inputs.student_id }}
+    secrets: inherit
 
   on-pr-opened:
     if: ${{ inputs.event_name == 'pull_request' && (inputs.pr_action == 'opened' || inputs.pr_action == 'synchronize')}}
@@ -59,6 +60,7 @@ jobs:
       available_assignments: ${{ inputs.available_assignments }}
       student_id: ${{ inputs.student_id }}
       kmom_paths: ${{ inputs.kmom_paths }}
+    secrets: inherit
 
   on-requested-change:
     if: ${{ inputs.event_name == 'pull_request_review' && inputs.review_state == 'changes_requested' }}
