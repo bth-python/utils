@@ -1,9 +1,12 @@
 name: "Update Canvas"
 description: "Update Canvas with grade and comment"
 inputs:
+  subcommand:
+    description: "Select subcommand: submit_assignment or grade_submission"
+    required: true
   grade:
     description: 'Submission grade'
-    required: true
+    required: false
   comment:
     description: 'Submission comment'
     required: true
@@ -23,9 +26,10 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Notify Canvas API
+    - name: Debug
       shell: bash
       run: |
+        echo "subcommand: ${{ inputs.subcommand }}"
         echo "Notifying Canvas for assignment ${{  inputs.assignment_id  }}..."
         echo "course_ID: ${{ inputs.course_id }}"
         echo "assignment_id: ${{ inputs.assignment_id }}"
@@ -33,31 +37,24 @@ runs:
         echo "grade: ${{ inputs.grade }}"
         echo "comment: ${{ inputs.comment }}"
 
+    - name: Submit Assignment
+      shell: bash
+      if: ${{ inputs.subcommand == 'submit_assignment' }}
+      run: |
+        curl --location 'https://bth.instructure.com/api/v1/courses/${{ inputs.course_id }}/assignments/${{ inputs.assignment_id }}/submissions' \
+        --header 'Content-Type: application/x-www-form-urlencoded' \
+        --header 'Authorization: Bearer ${{ inputs.canvas_api_token }}' \
+        --data-urlencode 'submission%5Bsubmission_type%5D=online_text_entry' \
+        --data-urlencode 'submission%5Bbody%5D=${{ inputs.comment }}' \
+        --data-urlencode 'submission%5Buser_id%5D=${{ inputs.student_id }}'
+
+
+    - name: Grade Submission
+      shell: bash
+      if: ${{ inputs.subcommand == 'grade_submission' }}
+      run: |
         curl --location --request PUT 'https://bth.instructure.com/api/v1/courses/${{ inputs.course_id }}/assignments/${{ inputs.assignment_id }}/submissions/${{ inputs.student_id }}' \
         --header 'Content-Type: application/x-www-form-urlencoded' \
         --header 'Authorization: Bearer ${{ inputs.canvas_api_token }}' \
         --data-urlencode 'comment%5Btext_comment%5D=${{ inputs.comment }}' \
         --data-urlencode 'submission%5Bposted_grade%5D=${{ inputs.grade }}'
-
-
-    # Review state:
-    # ${{ github.event.review.state }}
-    # (e.g., approved, changes_requested, commented)
-
-    # Review body (the comment):
-    # ${{ github.event.review.body }}
-
-    # Review ID:
-    # ${{ github.event.review.id }}
-
-    # Review HTML URL (link to the review):
-    # ${{ github.event.review.html_url }}
-
-    # Review author:
-    # ${{ github.event.review.user.login }}
-
-    # Submitted at:
-    # ${{ github.event.review.submitted_at }}
-
-    # Pull request info:
-    # All usual PR info is available under ${{ github.event.pull_request.* }}
