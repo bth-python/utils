@@ -21,6 +21,9 @@ on:
       available_assignments:
         required: true
         type: string
+      student_id:
+        required: true
+        type: string
       kmom_paths:
         required: true
         type: string
@@ -31,8 +34,8 @@ jobs:
     uses: bth-python/utils/.github/workflows/on_merge.yml@main
     with:
       course_id: ${{ inputs.course_id }}
+      student_id: ${{ inputs.student_id }}
       available_assignments: ${{ inputs.available_assignments }}
-      pr_action: ${{ inputs.pr_action }}
       event: ${{ inputs.event }}
     secrets: inherit
 
@@ -44,6 +47,7 @@ jobs:
       event: ${{ inputs.event }}
       course_id: ${{ inputs.course_id }}
       available_assignments: ${{ inputs.available_assignments }}
+      student_id: ${{ inputs.student_id }}
 
   on-pr-opened:
     if: ${{ inputs.event_name == 'pull_request' && (inputs.pr_action == 'opened' || inputs.pr_action == 'synchronize')}}
@@ -53,6 +57,7 @@ jobs:
       event: ${{ inputs.event }}
       course_id: ${{ inputs.course_id }}
       available_assignments: ${{ inputs.available_assignments }}
+      student_id: ${{ inputs.student_id }}
       kmom_paths: ${{ inputs.kmom_paths }}
 
   on-requested-change:
@@ -61,6 +66,7 @@ jobs:
     with:
       event: ${{ inputs.event }}
       course_id: ${{ inputs.course_id }}
+      student_id: ${{ inputs.student_id }}
       available_assignments: ${{ inputs.available_assignments }}
     secrets: inherit
 

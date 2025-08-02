@@ -15,6 +15,9 @@ on:
       available_assignments:
         required: true
         type: string
+      student_id:
+        required: true
+        type: string
 
 jobs:
   report-closed-pr-to-canvas:
@@ -48,3 +51,4 @@ jobs:
           canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
           course_id: ${{inputs.course_id}}
           assignments_id: ${{ steps.resolve.outputs.assignment }}
+          student_id: ${{ inputs.student_id }}

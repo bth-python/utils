@@ -13,29 +13,29 @@ inputs:
   assignments_id:
     required: true
     description: 'Canvas AssignmentID'
+  student_id:
+    required: true
+    description: "Canvas student id"
   canvas_api_token:
     required: true
     description: 'Canvas API token'
+
 runs:
   using: "composite"
   steps:
     - name: Notify Canvas API
       shell: bash
-      env:
-        COURSE_ID: ${{ inputs.course_id }}
-        ASSIGNMENT_ID: ${{ inputs.assignment_id }}
       run: |
         echo "Notifying Canvas for assignment ${{  inputs.assignment_id  }}..."
         echo "course_ID: ${{ inputs.course_id }}"
         echo "grade: ${{ inputs.grade }}"
         echo "comment: ${{ inputs.comment }}"
 
-        echo \
-        "https://bth.instructure.com/api/v1/courses/${COURSE_ID}/assignments/${ASSIGNMENT_ID}/submissions/update_grades" \
-        -H "Authorization: Bearer ${{ inputs.canvas_api_token }}" \
-        # -H "Content-Type: application/json"
-        #   curl -X POST \
-
+        curl --location --request PUT 'https://bth.instructure.com/api/v1/courses/${{ inputs.course_id }}/assignments/${{ inputs.assignment_id }}/submissions/${{ inputs.student_id }}' \
+        --header 'Content-Type: application/x-www-form-urlencoded' \
+        --header 'Authorization: Bearer ${{ inputs.canvas_api_token }}' \
+        --data-urlencode 'comment%5Btext_comment%5D=${{ inputs.comment }}' \
+        --data-urlencode 'submission%5Bposted_grade%5D=${{ inputs.grade }}'
 
 
     # Review state:
