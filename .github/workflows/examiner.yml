@@ -24,6 +24,7 @@ on:
 
 jobs:
   submit-canvas:
+    if: ${{ inputs.pr_action}}  == "opened"
     runs-on: ubuntu-latest
     steps:
       - name: Create body
@@ -31,11 +32,11 @@ jobs:
         run: |
           cat << EOF >> $GITHUB_OUTPUT
           myoutput<<EOM
-          Pull Request action: ${{ inputs.pr_action }}
-
-          ${{github.event.pull_request.title}}
-          ${{github.event.pull_request.body}}
-
+          Pull Request action: ${{ inputs.pr_action }}<br>
+          <br>
+          ${{github.event.pull_request.title}}<br>
+          ${{github.event.pull_request.body}}<br>
+          <br>
           PR URL: ${{ fromJson(inputs.event).pull_request.html_url }}
           EOM
           EOF
@@ -139,8 +140,6 @@ jobs:
           myoutput<<EOM
           Pull Request action: ${{ inputs.pr_action }}
           Status: $OUTCOME
-          ${{github.event.pull_request.title}}
-          ${{github.event.pull_request.body}}
 
           PR URL: ${{ fromJson(inputs.event).pull_request.html_url }}
           EOM
