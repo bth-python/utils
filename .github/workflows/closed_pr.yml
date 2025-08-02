@@ -50,5 +50,5 @@ jobs:
           comment: "${{ steps.created_comment.outputs.myoutput }}"
           canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
           course_id: ${{inputs.course_id}}
-          assignments_id: ${{ steps.resolve.outputs.assignment }}
+          assignment_id: ${{ steps.resolve.outputs.assignment }}
           student_id: ${{ inputs.student_id }}

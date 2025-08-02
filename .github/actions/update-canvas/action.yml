@@ -10,7 +10,7 @@ inputs:
   course_id:
     required: true
     description: 'Canvas CourseID'
-  assignments_id:
+  assignment_id:
     required: true
     description: 'Canvas AssignmentID'
   student_id:
