@@ -29,8 +29,7 @@ jobs:
           cat << EOF >> $GITHUB_OUTPUT
           myoutput<<EOM
           Pull Request Action: ${{ inputs.pr_action }}
-          Status:
-          Pull request was closed.
+          Status: Pull request was closed.
 
           User who closed: ${{ fromJson(inputs.event).sender.login }}
           PR URL: ${{ fromJson(inputs.event).pull_request.html_url }}
@@ -46,6 +45,7 @@ jobs:
       - name: Update Canvas with closed PR
         uses: bth-python/utils/.github/actions/update-canvas@main
         with:
+          subcommand: "grade_submission"
           grade: "Ux"
           comment: "${{ steps.created_comment.outputs.myoutput }}"
           canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}

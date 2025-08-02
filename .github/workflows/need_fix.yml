@@ -44,6 +44,7 @@ jobs:
       - name: Update Canvas with need to fix
         uses: bth-python/utils/.github/actions/update-canvas@main
         with:
+          subcommand: "grade_submission"
           grade: "Ux"
           comment: "${{ steps.created_comment.outputs.myoutput }}"
           canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
