@@ -24,7 +24,7 @@ on:
 
 jobs:
   submit-canvas:
-    if: ${{ inputs.pr_action}}  == "opened"
+    if: ${{ inputs.pr_action == 'opened' }}
     runs-on: ubuntu-latest
     steps:
       - name: Create body
