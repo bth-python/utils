@@ -152,7 +152,7 @@ jobs:
 
       - name: Set grade variable
         id: set_grade
-        run: echo "${{ (needs.run-kmoms.result == 'success' && needs.run-labs.result == 'success') && 'PG' || 'Ux' }}" >> $GITHUB_OUTPUT
+        run: echo "grade=${{ (needs.run-kmoms.result == 'success' && needs.run-labs.result == 'success') && 'PG' || 'Ux' }}" >> $GITHUB_OUTPUT
 
       - name: Update Canvas result from tests
         uses: bth-python/utils/.github/actions/update-canvas@main
