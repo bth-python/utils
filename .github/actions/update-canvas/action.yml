@@ -61,9 +61,9 @@ runs:
           echo "response value is: $response"
           echo "Attempt value is: $attempt"
 
-          curl --location --request PUT 'https://bth.instructure.com/api/v1/courses/${{ inputs.course_id }}/assignments/${{ inputs.assignment_id }}/submissions/${{ inputs.student_id }}' \
-          --header 'Content-Type: application/x-www-form-urlencoded' \
-          --header 'Authorization: Bearer ${{ inputs.canvas_api_token }}' \
-          --data-urlencode 'comment%5Btext_comment%5D=${{ inputs.comment }}' \
-          --data-urlencode 'comment%attempt%5D=$(echo "$attempt")' \
-          --data-urlencode 'submission%5Bposted_grade%5D=${{ inputs.grade }}'
+          # curl --location --request PUT 'https://bth.instructure.com/api/v1/courses/${{ inputs.course_id }}/assignments/${{ inputs.assignment_id }}/submissions/${{ inputs.student_id }}' \
+          # --header 'Content-Type: application/x-www-form-urlencoded' \
+          # --header 'Authorization: Bearer ${{ inputs.canvas_api_token }}' \
+          # --data-urlencode 'comment%5Btext_comment%5D=${{ inputs.comment }}' \
+          # --data-urlencode 'comment%attempt%5D=$(echo "$attempt")' \
+          # --data-urlencode 'submission%5Bposted_grade%5D=${{ inputs.grade }}'
