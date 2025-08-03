@@ -55,7 +55,7 @@ runs:
       run: |
           response=$(curl --silent --location --request GET 'https://bth.instructure.com/api/v1/courses/${{ inputs.course_id }}/assignments/${{ inputs.assignment_id }}/submissions/${{ inputs.student_id }}' \
           --header 'Content-Type: application/x-www-form-urlencoded' \
-          --header 'Authorization: ${{ inputs.canvas_api_token }}')
+          --header 'Authorization: Bearer ${{ inputs.canvas_api_token }}')
 
           attempt=$(echo "$response" | jq -r '.attempt')
           echo "Attempt value is: $attempt"
