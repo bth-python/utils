@@ -130,7 +130,6 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     env:
-      GRADE: ${{ (needs.run-kmoms.result == 'success' && needs.run-labs.result == 'success') && 'PG' || 'Ux' }}
       OUTCOME: ${{ (needs.run-kmoms.result == 'success' && needs.run-labs.result == 'success') && 'All tests have passed.' || 'Something failed, look through logs to see what you need to fix.' }}
     steps:
       - name: Create comment
@@ -151,11 +150,15 @@ jobs:
           available_assignments: ${{ inputs.available_assignments }}
           pull_request: ${{ toJson(fromJson(inputs.event).pull_request) }}
 
+      - name: Set grade variable
+        id: set_grade
+        run: echo "${{ (needs.run-kmoms.result == 'success' && needs.run-labs.result == 'success') && 'PG' || 'Ux' }}" >> $GITHUB_OUTPUT
+
       - name: Update Canvas result from tests
         uses: bth-python/utils/.github/actions/update-canvas@main
         with:
           subcommand: "grade_submission"
-          grade: "$GRADE"
+          grade: "${{ steps.set_grade.outputs.grade }}"
           comment: "${{ steps.created_comment.outputs.myoutput }}"
           canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
           student_id: ${{ inputs.student_id }}
