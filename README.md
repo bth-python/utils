@@ -24,7 +24,7 @@ För att köra integrering mot Canvas måste det finnas lite data på GitHub.
 
 #### Organisations hemligheter
 
-- `CANVAS_API_TOKEN`: för att updpatera canvas
+- `CANVAS_API_TOKEN`: för att uppdatera canvas. Jag använder mig av Umbridge användaren för denna. Då är det tydligt att det inte är jag personligen som har gjort alla uppdateringar. Men man kan skapa en egen token och använda.
 - `READ_ORG_TOKEN`: en PAT som har rättigheter att läsa vilka teams som finns i organisationen.
 
 #### Organisations variabler:
