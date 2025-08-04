@@ -89,7 +89,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: [resolve-assignment, check-authorization]
     env:
-      GRADE: ${{ (needs.check-authorization.outputs.authorized) && 'G' || 'U' }}
       STATUS: ${{ ((needs.check-authorization.outputs.authorized)) && 'Merge was done by authorized user.' || 'Someone other than authorized teacher tried to merge PR. Contact course responsible.' }}
     steps:
       - name: Get latest approved review message
@@ -124,11 +123,15 @@ jobs:
           available_assignments: ${{ inputs.available_assignments }}
           pull_request: ${{ toJson(fromJson(inputs.event).pull_request) }}
 
+      - name: Set grade variable
+        id: set_grade
+        run: echo "grade=${{ (needs.check-authorization.outputs.authorized) && 'G' || 'U' }}" >> $GITHUB_OUTPUT
+
       - name: Update Canvas with closed PR
         uses: bth-python/utils/.github/actions/update-canvas@main
         with:
           subcommand: "grade_submission"
-          grade: $GRADE
+          grade: "${{ steps.set_grade.outputs.grade }}"
           comment: "${{ steps.created_comment.outputs.myoutput }}"
           canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
           course_id: ${{inputs.course_id}}
