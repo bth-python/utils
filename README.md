@@ -51,7 +51,14 @@ När en student öppnar en ny PR körs detta workflow. Den gör tre saker.
 2. För det kmom som man gör inlämningen på och alla föregående kmoms exekveras labbarna, validering och testerna på uppgifterna. T.ex. om de gör inlämning på kmom03 så körs alla för kmom01, kmom02 och kmom03.
 3. Resultatet av alla tester och validering används för att betygsätta inlämningen som skapades (1). Om allt passerade sätts betyg `PG`. Om något gick fel sätts betyg `Ux`. I kommentaren står det om allt gick bra eller om något gick fel. Det finns också en länk till workflow jobbet på Github så studenten kan kolla vad som gick fel.
 
+Om studenten pushar ny kod medan PRn är aktiv, t.ex. de ska fixa en komplettering, då körs steg 2 och 3.
+
 Detta workflow är minst generell. Steg 2 har mycket kurs specifikt men steg 1 och 3 kan återanvändas för andra kurser om man ändrar på steg 2.
+
+#### Skapar i Canvas.
+
+- En inlämning
+- En kommentar och betyg baserat på testerna resultat, PG eller Ux.
 
 #### Setup
 
@@ -81,8 +88,24 @@ För att kunna veta vilka kmoms och i vilka mappar som uppgifterna ligger i för
 
 När en lärare gör en code review på PRn så skickas det till Canvas. Slutkommentaren som läraren gör hela reviewn används som kommentar på canvas. Det skickas också med en länk till reviewn. Betyg `Ux` sätts på inlämningen.
 
+#### Skapar i Canvas
+
+- En kommentar och betyg Ux
+
 ### on_merge.yml
 
 När en lärare ska ge en ge en student godkänt på en uppgift måste läraren göra en code review och välja att den `approve` koden. Efter det ska läraren klicka "merge PR".
 
 När läraren gör merge körs detta workflow. Först görs en koll att användaren som mergade finns med i teamet `teachers`. Om användaren inte gör det sätts betyg `Ux`. Om användaren finns i teamet sätts betyg `G`. Kommentaren som läraren skrev när den gjorde code reviewn används som kommentar på Canvas rättningen.
+
+#### Skapar i Canvas
+
+- En kommentar och betyg G (om användaren har rättigheter att godkänna annars U)
+
+### closed_pr.yml
+
+Om studenten stänger sin PR körs detta workflow. En kommentar skapas i Canvas med text om att studenten har stängt sin PR och betyget Ux sätts. De behöver skapa en ny PR och då kommer `examiner.yml` köras igen och skapa en ny inlämning på Canvas.
+
+#### Skapar i Canvas
+
+- En kommentar och betyg Ux
