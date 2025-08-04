@@ -51,6 +51,7 @@ runs:
     - name: Set attempt variable
       shell: bash
       id: set_attempt
+      if: ${{ inputs.subcommand == 'grade_submission' }}
       run: |
           response=$(curl --silent --location --request GET 'https://bth.instructure.com/api/v1/courses/${{ inputs.course_id }}/assignments/${{ inputs.assignment_id }}/submissions/${{ inputs.student_id }}' \
           --header 'Content-Type: application/x-www-form-urlencoded' \
@@ -68,5 +69,4 @@ runs:
           --header 'Content-Type: application/x-www-form-urlencoded' \
           --header 'Authorization: Bearer ${{ inputs.canvas_api_token }}' \
           --data-urlencode 'comment%5Btext_comment%5D=${{ inputs.comment }}' \
-          --data-urlencode 'comment%attempt%5D=${{ steps.set_attempt.outputs.attempt }}' \
           --data-urlencode 'submission%5Bposted_grade%5D=${{ inputs.grade }}'
