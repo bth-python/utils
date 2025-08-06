@@ -2,6 +2,43 @@
 
 Contain common scripts and workflows
 
+# Scripts
+
+## invite-to-organisation
+
+Invites students to GitHub organisation using assignments on Canvas and grades the submission based on if invite was sent successfully or not.
+
+The script downloads all submission on the assignment and parses out emails. The emails are then invited to the organisation. If invite was sent successfully or the email is already a member, the students submission is graded with `G`.
+
+### Setup
+
+1. Create a new assignment on Canvas. Tell the students to turn in the email of their GitHub account.
+
+1. Create `.env` and add the variables:
+
+```
+CANVAS_TOKEN=
+ORGANIZATION=
+GITHUB_TOKEN=<a token with permission to add members to organisation>
+REPO=<currently not used>
+```
+
+1. Update `courses.json` with course IDs and assignment IDs to use for finding student submissions.
+
+```
+  [
+    [2508, 58817]
+  ]
+```
+
+1. `pnpn install`
+
+1. `node invite.mjs`
+
+### TODO
+
+Fully support inviting to a repository.
+
 # Workflows
 
 ## Canvas integrering
