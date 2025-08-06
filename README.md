@@ -35,6 +35,10 @@ REPO=<currently not used. For future functionality, can be skipped>
 
 1. `node invite.mjs`
 
+#### cron
+
+För att kör som cronjob med pm2, `pm2 start ecosystem.config.js`. Då körs scriptet var 3:e minut.
+
 ### TODO
 
 Fully support inviting to a repository.
