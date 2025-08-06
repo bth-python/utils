@@ -8,11 +8,11 @@ Contain common scripts and workflows
 
 Invites students to GitHub organisation using assignments on Canvas and grades the submission based on if invite was sent successfully or not.
 
-The script downloads all submission on the assignment and parses out emails. The emails are then invited to the organisation. If invite was sent successfully or the email is already a member, the students submission is graded with `G`.
+The script downloads all submission on the assignment and parses out emails. The emails are then invited to the organisation. If invite was sent successfully or the email is already a member, the students submission is graded with `G`. If it was not sent successfully it is graded with `Ux`
 
 ### Setup
 
-1. Create a new assignment on Canvas. Tell the students to turn in the email of their GitHub account.
+1. Create a new assignment on Canvas that support grades `G` and `Ux`. Tell the students to turn in the email of their GitHub account.
 
 1. Create `.env` and add the variables:
 
@@ -20,14 +20,14 @@ The script downloads all submission on the assignment and parses out emails. The
 CANVAS_TOKEN=
 ORGANIZATION=
 GITHUB_TOKEN=<a token with permission to add members to organisation>
-REPO=<currently not used>
+REPO=<currently not used. For future functionality, can be skipped>
 ```
 
 1. Update `courses.json` with course IDs and assignment IDs to use for finding student submissions.
 
 ```
   [
-    [2508, 58817]
+    [<courseID>, <assignmentID>]
   ]
 ```
 
