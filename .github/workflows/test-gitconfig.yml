@@ -23,13 +23,24 @@ jobs:
   report-closed-pr-to-canvas:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+
+      - name: Run check for files Task
+        id: check_files
+        run: task check-have-files
+
       - name: Create comment
         id: created_comment
         run: |
           cat << EOF >> $GITHUB_OUTPUT
           myoutput<<EOM
           Pull Request Action: ${{ inputs.pr_action }}
-          Status: RP was opened and everything works so far..
+          Status: ${{ steps.check_files.outcome == 'success' && '✅ All files found' || '❌ Some files missing' }}
 
           PR URL: ${{ fromJson(inputs.event).pull_request.html_url }}
           EOM
@@ -45,7 +56,7 @@ jobs:
         uses: bth-python/utils/.github/actions/update-canvas@main
         with:
           subcommand: "grade_submission"
-          grade: "G"
+          grade: ${{ steps.check_files.outcome == 'success' && 'G' || 'Ux' }}
           comment: "${{ steps.created_comment.outputs.myoutput }}"
           canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
           course_id: ${{inputs.course_id}}
