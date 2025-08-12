@@ -30,7 +30,7 @@ on:
 
 jobs:
   on-pr-merged:
-    if: ${{ inputs.event_name == 'pull_request' && fromJson(inputs.event).pull_request.merged == true }}
+    if: ${{ inputs.event_name == 'pull_request' && fromJson(inputs.event).pull_request.merged == true && github.base_ref != 'bth/submit/test-gitconfig' }}
     uses: bth-python/utils/.github/workflows/on_merge.yml@main
     with:
       course_id: ${{ inputs.course_id }}
@@ -42,7 +42,7 @@ jobs:
 
 
   on-pr-closed:
-    if: ${{ inputs.event_name == 'pull_request' && inputs.pr_action == 'closed' && !fromJson(inputs.event).pull_request.merged == true }}
+    if: ${{ inputs.event_name == 'pull_request' && inputs.pr_action == 'closed' && !fromJson(inputs.event).pull_request.merged == true && github.base_ref != 'bth/submit/test-gitconfig' }}
     uses: bth-python/utils/.github/workflows/closed_pr.yml@main
     with:
       pr_action: ${{ inputs.pr_action }}
@@ -69,7 +69,7 @@ jobs:
 
 
   on-requested-change:
-    if: ${{ inputs.event_name == 'pull_request_review' && inputs.review_state == 'changes_requested' }}
+    if: ${{ inputs.event_name == 'pull_request_review' && inputs.review_state == 'changes_requested' && github.base_ref != 'bth/submit/test-gitconfig' }}
     uses: bth-python/utils/.github/workflows/need_fix.yml@main
     with:
       event: ${{ inputs.event }}
