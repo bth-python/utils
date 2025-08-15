@@ -1,0 +1,64 @@
+on:
+  workflow_call:
+    # pull_request_review:
+    #   types: [submitted]
+    inputs:
+      event:
+        required: true
+        type: string
+      pr_action:
+        required: false
+        type: string
+      course_id:
+        required: true
+        type: string
+      available_assignments:
+        required: true
+        type: string
+      student_id:
+        required: true
+        type: string
+
+jobs:
+  report-closed-pr-to-canvas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+
+      - name: Run check for files Task
+        id: check_files
+        run: task check-have-files
+
+      - name: Create comment
+        id: created_comment
+        run: |
+          cat << EOF >> $GITHUB_OUTPUT
+          myoutput<<EOM
+          Pull Request Action: ${{ inputs.pr_action }}
+          Status: ${{ steps.check_files.outcome == 'success' && '✅ All files found' || '❌ Some files missing' }}
+
+          PR URL: ${{ fromJson(inputs.event).pull_request.html_url }}
+          EOM
+          EOF
+
+      - uses: bth-python/utils/.github/actions/get-assignment-id@main
+        id: resolve
+        with:
+          available_assignments: ${{ inputs.available_assignments }}
+          pull_request: ${{ toJson(fromJson(inputs.event).pull_request) }}
+
+      - name: Update Canvas with closed PR
+        uses: bth-python/utils/.github/actions/update-canvas@main
+        with:
+          subcommand: "grade_submission"
+          grade: ${{ steps.check_files.outcome == 'success' && 'G' || 'Ux' }}
+          comment: "${{ steps.created_comment.outputs.myoutput }}"
+          canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
+          course_id: ${{inputs.course_id}}
+          assignment_id: ${{ steps.resolve.outputs.assignment }}
+          student_id: ${{ inputs.student_id }}
