@@ -97,7 +97,7 @@ async function addStudentsToGitHubOrganization(submissions, course) {
                     }
                 });
                 if (res.status === 201) {
-                    updateCanvas(res.status, `Invitation sent to ${submission[EMAILINDEX]} successfully. Go to ${ORG_URL} to accept the invitation.`);
+                    updateCanvas(res.status, `Invitation sent to ${submission[EMAILINDEX]} successfully.\n\nGo to ${ORG_URL} to accept the invitation.`);
                 }
             } catch (error) {
                 if (error.status === 422) {
@@ -105,7 +105,7 @@ async function addStudentsToGitHubOrganization(submissions, course) {
                     if (message?.includes("is already a part of this organization")) {
                         updateCanvas(error.status, `${submission[EMAILINDEX]} is already a member of the organization, ${ORG_URL}.`);
                     } else {
-                        updateCanvas(error.status, `Validation error for ${submission[EMAILINDEX]}: ${message}`);
+                        updateCanvas(error.status, `Validation error for ${submission[EMAILINDEX]}:\n${message}`);
                     }
                 } else {
                     updateCanvas(error.status, `Failed to invite ${submission[EMAILINDEX]}: ${error}`);
