@@ -21,15 +21,15 @@ async function fetchStudentSubmissions(courseID, assignmentID) {
     let result = []
     let i = 1
     do {
-        submitted = submitted.concat(result).filter(item => item.workflow_state === "submitted").map(item => {
+        submitted = submitted.concat(result.filter(item => item.workflow_state === "submitted").map(item => {
             const matches = item.body.match(EMAILREGEX);
             if (matches) {
                 return [matches[0], item.user.id, item.attempt];
             } else {
                 return [null, item.user.id, item.attempt]
             }
-        });
-
+        }));
+        
         const url = `https://bth.instructure.com/api/v1/courses/${courseID}/assignments/${assignmentID}/submissions?per_page=100&page=${i}&include[]=user`;
 
         const response = await fetch(url, {
@@ -40,6 +40,7 @@ async function fetchStudentSubmissions(courseID, assignmentID) {
 
         result = await response.json();
         i++;
+        
     } while (result.length > 0 )
 
     return submitted;
@@ -49,7 +50,8 @@ function updateCanvas(courseID, assignmentID, user, attempt, status, comment) {
     const myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
     myHeaders.append("Authorization", `Bearer ${process.env.CANVAS_TOKEN}`,);
-    
+    console.log(`Updating Canvas for user ${user} with status ${status} and comment: ${comment}`);
+
     const urlencoded = new URLSearchParams();
     if ([201, 422].includes(status)) {
         urlencoded.append("submission[posted_grade]", "G");
@@ -119,16 +121,18 @@ let coursesData;
 try {
     const data = await fs.readFile('courses.json', 'utf-8');
     coursesData = JSON.parse(data);
+    console.log(`Loaded ${coursesData} courses from courses.json`);
+    
     // You can now use coursesData as needed
 } catch (err) {
     console.error('Failed to read courses.json:', err);
 }
 
 for (const course of coursesData) {
-    console.log(course);
+    console.log(`Getting submissions for course ${course}`);
     
     const emailsIds = await fetchStudentSubmissions(course[COURSEINDEX], course[ASSIGNMENTINDEX])
-    console.log(emailsIds);
+    console.log(`Found emails: ${emailsIds}`);
     
     addStudentsToGitHubOrganization(emailsIds, course);
 }
