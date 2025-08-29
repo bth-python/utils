@@ -46,7 +46,8 @@ runs:
         --header 'Authorization: Bearer ${{ inputs.canvas_api_token }}' \
         --data-urlencode 'submission%5Bsubmission_type%5D=online_text_entry' \
         --data-urlencode 'submission%5Bbody%5D=${{ inputs.comment }}' \
-        --data-urlencode 'submission%5Buser_id%5D=${{ inputs.student_id }}'
+        --data-urlencode 'submission%5Buser_id%5D=${{ inputs.student_id }}' \
+        --fail-with-body
 
     - name: Set attempt variable
       shell: bash

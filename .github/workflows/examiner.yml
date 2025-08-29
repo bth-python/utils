@@ -48,7 +48,7 @@ jobs:
           pull_request: ${{ toJson(fromJson(inputs.event).pull_request) }}
 
       - name: Update Canvas result from tests
-        uses: bth-python/utils/.github/actions/update-canvas@main
+        uses: bth-python/utils/.github/actions/update-canvas@dev
         with:
           subcommand: "submit_assignment"
           comment: "${{ steps.created_body.outputs.myoutput }}"
@@ -125,7 +125,7 @@ jobs:
       - name: Run extra tests in ${{ matrix.folder }}
         continue-on-error: true
         run: |
-          echo "🔬 Running extras: ${{ matrix.folder }}"
+          echo "🔬 Running extras: ${{ matrix.folder }}. It is OK if these tests fail. It will not affect your grade"
           uv run tester -f -e ${{ matrix.folder }}
 
   grade-canvas:
