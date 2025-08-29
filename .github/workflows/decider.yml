@@ -56,7 +56,7 @@ jobs:
 
   on-pr-opened:
     if: ${{ inputs.event_name == 'pull_request' && (inputs.pr_action == 'opened' || inputs.pr_action == 'synchronize') && github.base_ref != 'bth/submit/test-gitconfig'}}
-    uses: bth-python/utils/.github/workflows/examiner.yml@main
+    uses: bth-python/utils/.github/workflows/examiner.yml@dev
     with:
       pr_action: ${{ inputs.pr_action  }}
       event: ${{ inputs.event }}

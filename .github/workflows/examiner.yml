@@ -109,7 +109,7 @@ jobs:
 
     steps:
       - name: setup-python
-        uses: bth-python/utils/.github/actions/setup-python@main
+        uses: bth-python/utils/.github/actions/setup-python@dev
 
       - name: "Validate code"
         run: |
