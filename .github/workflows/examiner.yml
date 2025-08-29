@@ -114,8 +114,8 @@ jobs:
       - name: "Validate code"
         run: |
           cat README.md
-          cat tests/kmom01/test_1convert_structure.py
-          cat student-submission/tests/kmom01/test_1convert_structure.py
+          cat tests/kmom01/convert/test_1convert_structure.py
+          cat student-submission/tests/kmom01/convert/test_1convert_structure.py
           tree .
           uv run ruff check $(echo "${{ matrix.folder }}" | sed 's/tests/src/')
 
