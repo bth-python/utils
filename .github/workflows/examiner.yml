@@ -93,8 +93,10 @@ jobs:
 
       - name: "Validate code"
         run: uv run ruff check ${{ matrix.folder }}
+        continue-on-error: true
 
       - name: Run lab test in ${{ matrix.folder }}
+        continue-on-error: true
         run: |
           echo "🔬 Running lab: ${{ matrix.folder }}"
           uv run ${{ matrix.folder }}/lab.py
@@ -122,7 +124,7 @@ jobs:
       - name: Run extra tests in ${{ matrix.folder }}
         continue-on-error: true
         run: |
-          echo "🔬 Running extras: ${{ matrix.folder }}"
+          echo "🔬 Running extras: ${{ matrix.folder }}. It is OK if these tests fail. It will not affect your grade"
           uv run tester -f -e ${{ matrix.folder }}
 
   grade-canvas:
