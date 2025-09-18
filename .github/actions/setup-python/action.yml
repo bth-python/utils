@@ -4,6 +4,17 @@ runs:
   using: "composite"
   steps:
     - uses: actions/checkout@v4
+      with:
+        repository: bth-python/python-abcd25
+
+    - uses: actions/checkout@v4
+      with:
+        path: ./student-submission
+    
+    - name: Copy student code
+      shell: bash
+      run: |
+        rsync -av --delete ./student-submission/src/ ./src/
 
     - name: Install uv
       uses: astral-sh/setup-uv@v5

@@ -46,7 +46,8 @@ runs:
         --header 'Authorization: Bearer ${{ inputs.canvas_api_token }}' \
         --data-urlencode 'submission%5Bsubmission_type%5D=online_text_entry' \
         --data-urlencode 'submission%5Bbody%5D=${{ inputs.comment }}' \
-        --data-urlencode 'submission%5Buser_id%5D=${{ inputs.student_id }}'
+        --data-urlencode 'submission%5Buser_id%5D=${{ inputs.student_id }}' \
+        --fail-with-body
 
     - name: Set attempt variable
       shell: bash
@@ -55,7 +56,8 @@ runs:
       run: |
           response=$(curl --silent --location --request GET 'https://bth.instructure.com/api/v1/courses/${{ inputs.course_id }}/assignments/${{ inputs.assignment_id }}/submissions/${{ inputs.student_id }}' \
           --header 'Content-Type: application/x-www-form-urlencoded' \
-          --header 'Authorization: Bearer ${{ inputs.canvas_api_token }}')
+          --header 'Authorization: Bearer ${{ inputs.canvas_api_token }}' \
+          --fail-with-body)
 
           attempt=$(echo "$response" | jq -r '.attempt')
           echo "Attempt value is: $attempt"
@@ -70,4 +72,5 @@ runs:
           --header 'Authorization: Bearer ${{ inputs.canvas_api_token }}' \
           --data-urlencode 'comment%5Btext_comment%5D=${{ inputs.comment }}' \
           --data-urlencode 'comment%5Battempt%5D=${{ steps.set_attempt.outputs.attempt }}' \
-          --data-urlencode 'submission%5Bposted_grade%5D=${{ inputs.grade }}'
+          --data-urlencode 'submission%5Bposted_grade%5D=${{ inputs.grade }}' \
+          --fail-with-body
