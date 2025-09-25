@@ -54,7 +54,7 @@ jobs:
       - name: Get PR that triggered this push
         id: get-pr
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.READ_ORG_TOKEN }}
         run: |
           PR_JSON=$(gh pr list --state merged --base "$GITHUB_REF_NAME" --limit 1 --json mergedBy)
           echo "$PR_JSON"
