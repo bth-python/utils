@@ -110,7 +110,7 @@ jobs:
           myoutput<<EOM
           Pull Request Action: Merged
           Status: $STATUS
-          "${{ steps.get_review.outputs.latest_approved_review }}"
+          ${{ steps.get_review.outputs.latest_approved_review }}
 
           User who merged: ${{ fromJson(inputs.event).sender.login }}
           PR URL: ${{ fromJson(inputs.event).pull_request.html_url }}
