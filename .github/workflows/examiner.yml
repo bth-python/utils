@@ -37,7 +37,7 @@ jobs:
           <h2>${{github.event.pull_request.title}}<br></h2>
           ${{github.event.pull_request.body}}<br>
           <br>
-          PR URL: <a class="inline_disabled" href="${{ fromJson(inputs.event).pull_request.html_url }}" target="_blank" rel="noopener noreferrer">${{ fromJson(inputs.event).pull_request.html_url }}</a>
+          PR URL: <a class='inline_disabled' href='${{ fromJson(inputs.event).pull_request.html_url }}' target='_blank' rel='noopener noreferrer'>${{ fromJson(inputs.event).pull_request.html_url }}</a>
           EOM
           EOF
 
