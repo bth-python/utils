@@ -74,3 +74,10 @@ runs:
           --data-urlencode 'comment%5Battempt%5D=${{ steps.set_attempt.outputs.attempt }}' \
           --data-urlencode 'submission%5Bposted_grade%5D=${{ inputs.grade }}' \
           --fail-with-body
+
+    - name: Add "failing" label
+      if: failure()
+      uses: actions-ecosystem/action-add-labels@v1
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        labels: "Integration fail"
