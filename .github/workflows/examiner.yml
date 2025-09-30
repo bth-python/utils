@@ -137,12 +137,12 @@ jobs:
       - name: Add "PG" label
         uses: actions-ecosystem/action-add-labels@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ github.token }}
           labels: "PG"
       - name: Remove "TUx" label
         uses: actions-ecosystem/action-remove-labels@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ github.token }}
           labels: "TUx"
 
   label-on-failure:
