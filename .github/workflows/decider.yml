@@ -51,7 +51,7 @@ jobs:
     secrets: inherit
 
   on-pr-opened:
-    if: ${{ (inputs.event_name == 'pull_request' && inputs.pr_action == 'opened' && github.base_ref != 'refs/heads/bth/submit/test-gitconfig') || inputs.event_name == 'workflow_dispatch'}}
+    if: ${{ (inputs.event_name == 'pull_request' && inputs.pr_action == 'opened' && github.base_ref != 'refs/heads/bth/submit/test-gitconfig') || github.event_name == 'workflow_dispatch'}}
     uses: bth-python/utils/.github/workflows/examiner.yml@dev
     with:
       pr_action: ${{ inputs.pr_action  }}
