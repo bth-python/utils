@@ -153,12 +153,12 @@ jobs:
       - name: Add "failing" label
         uses: actions-ecosystem/action-add-labels@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.READ_ORG_TOKEN }}
           labels: "TUx"
       - name: Remove "PG" label
         uses: actions-ecosystem/action-remove-labels@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.READ_ORG_TOKEN }}
           labels: "PG"
 
   grade-canvas:
@@ -193,7 +193,7 @@ jobs:
       - name: Add label
         uses: actions-ecosystem/action-add-labels@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.READ_ORG_TOKEN }}
           labels: "${{ steps.set_grade.outputs.grade }}"
 
       - name: Update Canvas result from tests

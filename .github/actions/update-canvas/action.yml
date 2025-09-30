@@ -75,9 +75,16 @@ runs:
           --data-urlencode "submission%5Bposted_grade%5D=${{ inputs.grade }}" \
           --fail-with-body
 
+    - name: Remove "failing" label
+      if: success()
+      uses: actions-ecosystem/action-remove-labels@v1
+      with:
+        github_token: ${{ secrets.READ_ORG_TOKEN }}
+        labels: "Integration fail"
+
     - name: Add "failing" label
       if: failure()
       uses: actions-ecosystem/action-add-labels@v1
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+        github_token: ${{ secrets.READ_ORG_TOKEN }}
         labels: "Integration fail"
