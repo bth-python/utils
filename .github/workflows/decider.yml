@@ -29,18 +29,6 @@ on:
         type: string
 
 jobs:
-  debug:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Debug context
-        run: |
-          echo "github.ref: ${{ github.ref }}"
-          echo "github.head_ref: ${{ github.head_ref }}"
-          echo "github.base_ref: ${{ github.base_ref }}"
-          echo "github.event_name: ${{ github.event_name }}"
-          echo "event_name: ${{ github.event_name }}"
-          echo "pr_action: ${{ github.event.action || '' }}"
-          echo "review_state: ${{ github.event.review.state || '' }}"
   on-pr-merged:
     if: ${{ inputs.event_name == 'pull_request' && fromJson(inputs.event).pull_request.merged == true && github.base_ref != 'bth/submit/test-gitconfig' }}
     uses: bth-python/utils/.github/workflows/on_merge.yml@dev
