@@ -95,7 +95,7 @@ jobs:
         id: get_review
         run: |
           reviews_url="https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews"
-          reviews=$(curl -sSL -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "$reviews_url")
+          reviews=$(curl -sSL -H "Authorization: Bearer ${{ secrets.READ_ORG_TOKEN }}" "$reviews_url")
           # Get the latest approved review body (if any)
           latest=$(echo "$reviews" | jq -r '[.[] | select(.state == "APPROVED")][-1].body')
           # Save as output for next step
@@ -110,7 +110,7 @@ jobs:
           myoutput<<EOM
           Pull Request Action: Merged
           Status: $STATUS
-          "${{ steps.get_review.outputs.latest_approved_review }}"
+          ${{ steps.get_review.outputs.latest_approved_review }}
 
           User who merged: ${{ fromJson(inputs.event).sender.login }}
           PR URL: ${{ fromJson(inputs.event).pull_request.html_url }}
