@@ -84,7 +84,7 @@ runs:
       with:
         github_token: ${{ inputs.read_org_token }}
         labels: "Integration fail"
-        continue-on-error: true
+      continue-on-error: true
 
     - name: Add "failing" label
       if: failure()

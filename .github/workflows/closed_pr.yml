@@ -39,7 +39,7 @@ jobs:
         uses: bth-python/utils/.github/actions/update-canvas@dev
         with:
           subcommand: "grade_submission"
-          grade: ""
+          grade: "TUx"
           comment: "${{ steps.created_comment.outputs.myoutput }}"
           canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
           course_id: ${{inputs.course_id}}
