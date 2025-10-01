@@ -27,6 +27,7 @@ jobs:
           fi
       
       # if student
+#      ${{ steps.compare_users.outputs.same }}
         # Close 
         # comment on canvas
         # set TUx
