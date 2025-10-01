@@ -9,12 +9,9 @@ on:
 
 jobs:
   run-tester:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Update Canvas result from tests
-        uses: bth-python/utils/.github/workflows/tester.yml@dev
-        with:
-          kmom_paths: ${{ inputs.kmom_paths }}
+    uses: bth-python/utils/.github/workflows/tester.yml@dev
+    with:
+      kmom_paths: ${{ inputs.kmom_paths }}
 
 #   label-on-success:
 #     needs: [run-tester]
