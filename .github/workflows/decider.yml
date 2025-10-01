@@ -32,7 +32,7 @@ jobs:
 
   on-tag:
     if: startsWith(github.ref, 'refs/tags/')
-    uses: bth-python/utils/.github/workflows/examiner.yml@dev
+    uses: bth-python/utils/.github/workflows/tester.yml@dev
     with:
       kmom_paths: ${{ inputs.kmom_paths }}
     secrets: inherit
