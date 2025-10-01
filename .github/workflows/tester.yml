@@ -17,12 +17,17 @@ jobs:
       - name: Extract kmom based on tag
         id: set-matrix
         run: |
-          TAG="${GITHUB_REF#refs/tags/}"   # Remove refs/tags/
-          NUM=$(echo "$TAG" | sed -E 's/^v([0-9]+).*/\1/')
-          echo "First number after v: $NUM"
-          PADDED=$(printf "%02d" "$NUM")
-          echo "Result: $PADDED"
-          KMOM="kmom$PADDED"
+          if [[ "$GITHUB_REF" == *"refs/tags/"* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"   # Remove refs/tags/
+            NUM=$(echo "$TAG" | sed -E 's/^v([0-9]+).*/\1/')
+            echo "First number after v: $NUM"
+            PADDED=$(printf "%02d" "$NUM")
+            KMOM="kmom$PADDED"
+            echo "Result tag: $KMOM"
+          else
+            KMOM="${github.base_ref#bth/submit/}"   # Remove bth/submit/ from base ref
+            echo "Result branch: $KMOM"
+          fi
 
 
           KMOMS=$(echo '${{ inputs.kmom_paths }}' | jq -c --arg b "$KMOM" '.[$b].kmoms // []')

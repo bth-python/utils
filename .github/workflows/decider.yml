@@ -26,7 +26,7 @@ jobs:
     secrets: inherit
 
   on-labeled:
-    if: ${{ github.event_name == 'pull_request' && github.event.action == 'opened' && github.base_ref != 'bth/submit/test-gitconfig'}}
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'labeled' && github.base_ref != 'bth/submit/test-gitconfig'}}
     uses: bth-python/utils/.github/workflows/tester.yml@dev
     with:
       kmom_paths: ${{ inputs.kmom_paths }}
