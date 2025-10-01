@@ -15,8 +15,8 @@ runs:
       shell: bash
       run: |
         echo "Branch: ${{ github.base_ref }}"
-        echo "PR Branch: ${{ github.event.pull_request.base }}"
-        echo "PR Branch: ${{ toJSON(github.event.pull_request) }}"
+        echo "PR Branch: ${{ github.event.pull_request.base.ref }}"
+        echo "PR Branch: ${{ toJSON(github.event.pull_request.base) }}"
         echo "${{ inputs.available_assignments }}"
         echo '${{ inputs.available_assignments }}' | jq empty || { echo "Invalid JSON"; exit 1; }
 
@@ -33,7 +33,7 @@ runs:
           echo "Result tag: $KMOM"
         else
           REF=${{ github.event.pull_request.base.ref && github.event.pull_request.base.ref || github.base_ref }}
-          KMOM="${$REF#bth/submit/}"   # Remove bth/submit/ from base ref
+          KMOM="${REF#bth/submit/}"   # Remove bth/submit/ from base ref
           echo "Result branch: $KMOM"
         fi
         assignment_id=$(echo '${{ inputs.available_assignments }}' | jq -r --arg branch "${{ github.base_ref }}" '.[$branch]')
