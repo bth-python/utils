@@ -130,6 +130,12 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ (needs.check-authorization.outputs.authorized) }}
     steps:
+    - name: Add "Approved" label
+      uses: actions-ecosystem/action-add-labels@v1
+      with:
+        github_token: ${{ secrets.READ_ORG_TOKEN }}
+        labels: "Approved"
+
     - name: Remove "PG" label. . Det gör inget om denna får error, ignorera
       uses: actions-ecosystem/action-remove-labels@v1
       with:

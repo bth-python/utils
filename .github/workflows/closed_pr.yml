@@ -12,9 +12,30 @@ on:
         type: string
 
 jobs:
+
   report-closed-pr-to-canvas:
     runs-on: ubuntu-latest
     steps:
+
+      - name: Compare PR opener and closer
+        id: compare_users
+        run: |
+          if [ "${{ github.event.pull_request.user.login }}" = "${{ github.actor }}" ]; then
+            echo "same=true" >> $GITHUB_OUTPUT
+          else
+            echo "same=false" >> $GITHUB_OUTPUT
+          fi
+      
+      # if student
+        # Close 
+        # comment on canvas
+        # set TUx
+      # if teacher
+        # close
+        # comment
+        # U
+        # Fail label
+
       - name: Create comment
         id: created_comment
         run: |
