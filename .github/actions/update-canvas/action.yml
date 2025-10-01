@@ -82,12 +82,12 @@ runs:
       if: success()
       uses: actions-ecosystem/action-remove-labels@v1
       with:
-        github_token: ${{ read_org_token }}
+        github_token: ${{ inputs.read_org_token }}
         labels: "Integration fail"
 
     - name: Add "failing" label
       if: failure()
       uses: actions-ecosystem/action-add-labels@v1
       with:
-        github_token: ${{ read_org_token }}
+        github_token: ${{ inputs.read_org_token }}
         labels: "Integration fail"
