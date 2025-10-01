@@ -67,8 +67,6 @@ jobs:
       - name: Extract labs and kmoms based on PR branch
         id: set-matrix
         run: |
-          REF="${{ github.base_ref || github.ref }}"
-          BRANCH_NAME="${REF#refs/heads/}"
           BRANCH="$BRANCH_NAME"
           echo "📌 Branch: $BRANCH"
 
