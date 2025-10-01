@@ -31,13 +31,13 @@ jobs:
           EOM
           EOF
 
-      - uses: bth-python/utils/.github/actions/get-assignment-id@main
+      - uses: bth-python/utils/.github/actions/get-assignment-id@dev
         id: resolve
         with:
           available_assignments: ${{ inputs.available_assignments }}
 
       - name: Update Canvas result from tests
-        uses: bth-python/utils/.github/actions/update-canvas@main
+        uses: bth-python/utils/.github/actions/update-canvas@dev
         with:
           subcommand: "submit_assignment"
           comment: "${{ steps.created_body.outputs.myoutput }}"
