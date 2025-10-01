@@ -11,8 +11,7 @@ jobs:
   run-tester:
     runs-on: ubuntu-latest
     steps:
-      - name: Update Canvas result from tests
-        uses: bth-python/utils/.github/workflows/tester.yml@dev
+      - uses: bth-python/utils/.github/workflows/tester.yml@dev
         with:
           kmom_paths: ${{ inputs.kmom_paths }}
 
