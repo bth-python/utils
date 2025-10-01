@@ -46,9 +46,8 @@ jobs:
 
   on-requested-change:
     if: ${{ github.event_name == 'pull_request_review' && github.event.review.state == 'changes_requested' && github.base_ref != 'bth/submit/test-gitconfig' }}
-    uses: bth-python/utils/.github/workflows/need_fix.yml@dev
+    uses: bth-python/utils/.github/workflows/request_change.yml@dev
     with:
-      event: ${{ inputs.event }}
       course_id: ${{ inputs.course_id }}
       student_id: ${{ inputs.student_id }}
       available_assignments: ${{ inputs.available_assignments }}
