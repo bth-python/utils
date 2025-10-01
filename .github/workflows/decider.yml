@@ -35,16 +35,14 @@ jobs:
   #     event: ${{ inputs.event }}
   #   secrets: inherit
 
-  # on-pr-closed:
-  #   if: ${{ inputs.event_name == 'pull_request' && inputs.pr_action == 'closed' && !fromJson(inputs.event).pull_request.merged == true && github.base_ref != 'bth/submit/test-gitconfig' }}
-  #   uses: bth-python/utils/.github/workflows/closed_pr.yml@dev
-  #   with:
-  #     pr_action: ${{ inputs.pr_action }}
-  #     event: ${{ inputs.event }}
-  #     course_id: ${{ inputs.course_id }}
-  #     available_assignments: ${{ inputs.available_assignments }}
-  #     student_id: ${{ inputs.student_id }}
-  #   secrets: inherit
+  on-pr-closed:
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' && !github.event.pull_request.merged == true && github.base_ref != 'bth/submit/test-gitconfig' }}
+    uses: bth-python/utils/.github/workflows/closed_pr.yml@dev
+    with:
+      course_id: ${{ inputs.course_id }}
+      available_assignments: ${{ inputs.available_assignments }}
+      student_id: ${{ inputs.student_id }}
+    secrets: inherit
 
   on-pr-opened:
     if: ${{ github.event_name == 'pull_request' && github.event.action == 'opened' && github.base_ref != 'bth/submit/test-gitconfig'}}

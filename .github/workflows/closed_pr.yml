@@ -3,12 +3,6 @@ on:
     # pull_request_review:
     #   types: [submitted]
     inputs:
-      event:
-        required: true
-        type: string
-      pr_action:
-        required: false
-        type: string
       course_id:
         required: true
         type: string
@@ -28,27 +22,27 @@ jobs:
         run: |
           cat << EOF >> $GITHUB_OUTPUT
           myoutput<<EOM
-          Pull Request Action: ${{ inputs.pr_action }}
-          Status: Pull request was closed.
+          Pull Request Action: ${{ github.event.action }}
+          Status: Pull request was manually closed.
 
-          User who closed: ${{ fromJson(inputs.event).sender.login }}
-          PR URL: ${{ fromJson(inputs.event).pull_request.html_url }}
+          User who closed: ${{ github.event.sender.login }}
+          PR URL: ${{ github.event.pull_request.html_url }}
           EOM
           EOF
 
-      - uses: bth-python/utils/.github/actions/get-assignment-id@main
+      - uses: bth-python/utils/.github/actions/get-assignment-id@dev
         id: resolve
         with:
           available_assignments: ${{ inputs.available_assignments }}
-          pull_request: ${{ toJson(fromJson(inputs.event).pull_request) }}
 
       - name: Update Canvas with closed PR
-        uses: bth-python/utils/.github/actions/update-canvas@main
+        uses: bth-python/utils/.github/actions/update-canvas@dev
         with:
           subcommand: "grade_submission"
-          grade: "Ux"
+          grade: ""
           comment: "${{ steps.created_comment.outputs.myoutput }}"
           canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
           course_id: ${{inputs.course_id}}
           assignment_id: ${{ steps.resolve.outputs.assignment }}
           student_id: ${{ inputs.student_id }}
+          read_org_token: "${{ secrets.READ_ORG_TOKEN }}"
