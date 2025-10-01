@@ -18,6 +18,12 @@ jobs:
   report-requested-changes-to-canvas:
     runs-on: ubuntu-latest
     steps:
+      - name: Add "Needs improvement" label
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          github_token: ${{ secrets.READ_ORG_TOKEN }}
+          labels: "Needs improvement"
+
       - name: Create comment
         id: created_comment
         run: |
