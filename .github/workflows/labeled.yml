@@ -13,34 +13,34 @@ jobs:
     with:
       kmom_paths: ${{ inputs.kmom_paths }}
 
-#   label-on-success:
-#     needs: [run-tester]
-#     runs-on: ubuntu-latest
-#     if: success()
-#     steps:
-#     - name: Add "PG" label
-#       uses: actions-ecosystem/action-add-labels@v1
-#       with:
-#         github_token: ${{ secrets.READ_ORG_TOKEN }}
-#         labels: "PG"
-#     - name: Remove "TUx" label
-#       uses: actions-ecosystem/action-remove-labels@v1
-#       with:
-#         github_token: ${{ secrets.READ_ORG_TOKEN }}
-#         labels: "TUx"
-#       continue-on-error: true
+  label-on-success:
+    needs: [run-tester]
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+    - name: Add "PG" label
+      uses: actions-ecosystem/action-add-labels@v1
+      with:
+        github_token: ${{ secrets.READ_ORG_TOKEN }}
+        labels: "PG"
+    - name: Remove "TUx" label
+      uses: actions-ecosystem/action-remove-labels@v1
+      with:
+        github_token: ${{ secrets.READ_ORG_TOKEN }}
+        labels: "TUx"
+      continue-on-error: true
 
-#   label-on-failure:
-#     needs: [run-tester]
-#     runs-on: ubuntu-latest
-#     if: failure()
-#     steps:
-#     - name: Remove "PG" label
-#       uses: actions-ecosystem/action-remove-labels@v1
-#       with:
-#         github_token: ${{ secrets.READ_ORG_TOKEN }}
-#         labels: "PG"
-#       continue-on-error: true
+  label-on-failure:
+    needs: [run-tester]
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
+    - name: Remove "PG" label
+      uses: actions-ecosystem/action-remove-labels@v1
+      with:
+        github_token: ${{ secrets.READ_ORG_TOKEN }}
+        labels: "PG"
+      continue-on-error: true
 
 
 #   grade-canvas:
