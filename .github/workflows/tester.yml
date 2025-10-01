@@ -36,20 +36,23 @@ jobs:
     if: needs.generate-matrix.outputs.kmoms != '{"folder":[]}'
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix: ${{ fromJson(needs.generate-matrix.outputs.kmoms) }}
+
     steps:
       - name: setup-python
         uses: bth-python/utils/.github/actions/setup-python@main
 
       - name: "Validate code"
-        run: uv run ruff check $(echo "${{ needs.generate-matrix.outputs.kmoms }}" | sed 's/tests/src/')
+        run: uv run ruff check $(echo "${{ matrix.folder }}" | sed 's/tests/src/')
 
-      - name: Run kmom test in ${{ needs.generate-matrix.outputs.kmoms }}
+      - name: Run kmom test in ${{ matrix.folder }}
         run: |
-          echo "🔬 Running kmom: ${{ needs.generate-matrix.outputs.kmoms }}"
-          uv run tester -f ${{ needs.generate-matrix.outputs.kmoms }}
+          echo "🔬 Running kmom: ${{ matrix.folder }}"
+          uv run tester -f ${{ matrix.folder }}
 
-      - name: Run extra tests in ${{ needs.generate-matrix.outputs.kmoms }}
+      - name: Run extra tests in ${{ matrix.folder }}
         continue-on-error: true
         run: |
-          echo "🔬 Running extras: ${{ needs.generate-matrix.outputs.kmoms }}. It is OK if these tests fail. It will not affect your grade"
-          uv run tester -f -e ${{ needs.generate-matrix.outputs.kmoms }}
+          echo "🔬 Running extras: ${{ matrix.folder }}. It is OK if these tests fail. It will not affect your grade"
+          uv run tester -f -e ${{ matrix.folder }}
