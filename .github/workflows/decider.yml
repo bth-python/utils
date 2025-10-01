@@ -7,7 +7,7 @@ on:
         required: true
         type: string
       event:
-        required: true
+        required: false
         type: string
       pr_action:
         required: false
