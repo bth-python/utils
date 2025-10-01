@@ -25,6 +25,13 @@ jobs:
       kmom_paths: ${{ inputs.kmom_paths }}
     secrets: inherit
 
+  on-labeled:
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'opened' && github.base_ref != 'bth/submit/test-gitconfig'}}
+    uses: bth-python/utils/.github/workflows/tester.yml@dev
+    with:
+      kmom_paths: ${{ inputs.kmom_paths }}
+    secrets: inherit
+
   # on-pr-merged:
   #   if: ${{ inputs.event_name == 'pull_request' && fromJson(inputs.event).pull_request.merged == true && github.base_ref != 'bth/submit/test-gitconfig' }}
   #   uses: bth-python/utils/.github/workflows/on_merge.yml@dev
@@ -44,14 +51,14 @@ jobs:
       student_id: ${{ inputs.student_id }}
     secrets: inherit
 
-  on-pr-opened:
-    if: ${{ github.event_name == 'pull_request' && github.event.action == 'opened' && github.base_ref != 'bth/submit/test-gitconfig'}}
-    uses: bth-python/utils/.github/workflows/submit_to_canvas.yml@dev
-    with:
-      course_id: ${{ inputs.course_id }}
-      available_assignments: ${{ inputs.available_assignments }}
-      student_id: ${{ inputs.student_id }}
-    secrets: inherit
+  # on-pr-opened:
+  #   if: ${{ github.event_name == 'pull_request' && github.event.action == 'opened' && github.base_ref != 'bth/submit/test-gitconfig'}}
+  #   uses: bth-python/utils/.github/workflows/submit_to_canvas.yml@dev
+  #   with:
+  #     course_id: ${{ inputs.course_id }}
+  #     available_assignments: ${{ inputs.available_assignments }}
+  #     student_id: ${{ inputs.student_id }}
+  #   secrets: inherit
 
   # on-requested-change:
   #   if: ${{ inputs.event_name == 'pull_request_review' && inputs.review_state == 'changes_requested' && github.base_ref != 'bth/submit/test-gitconfig' }}
