@@ -29,6 +29,9 @@ jobs:
     if: ${{ github.event_name == 'pull_request' && github.event.action == 'labeled' && ( github.event.label.name == 'Submitted' || github.event.label.name == 'Re-submitted' )  && github.base_ref != 'bth/submit/test-gitconfig'}}
     uses: bth-python/utils/.github/workflows/labeled.yml@dev
     with:
+      course_id: ${{ inputs.course_id }}
+      available_assignments: ${{ inputs.available_assignments }}
+      student_id: ${{ inputs.student_id }}
       kmom_paths: ${{ inputs.kmom_paths }}
     secrets: inherit
 
