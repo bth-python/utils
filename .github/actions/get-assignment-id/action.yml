@@ -15,7 +15,7 @@ runs:
       shell: bash
       run: |
         echo "Branch: ${{ github.base_ref }}"
-        echo "PR Branch: ${{ github.event.pull_request.base.ref }}"
+        echo "PR Branch: ${{ toJSON(github.event) }}"
         echo "${{ inputs.available_assignments }}"
         echo '${{ inputs.available_assignments }}' | jq empty || { echo "Invalid JSON"; exit 1; }
 
