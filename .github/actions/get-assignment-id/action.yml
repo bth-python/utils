@@ -11,12 +11,17 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Extract assignment from org variable
-      id: get-assignment
+    - name: Debug
       shell: bash
       run: |
         echo "Branch: ${{ github.base_ref }}"
         echo "${{ inputs.available_assignments }}"
+        echo '${{ inputs.available_assignments }}' | jq empty || { echo "Invalid JSON"; exit 1; }
+
+    - name: Extract assignment from org variable
+      id: get-assignment
+      shell: bash
+      run: |
         assignment_id=$(echo '${{ inputs.available_assignments }}' | jq -r --arg branch "${{ github.base_ref }}" '.[$branch]')
         echo "assignment=$assignment_id"
         if [[ "$assignment_id" == "null" || -z "$assignment_id" ]]; then
