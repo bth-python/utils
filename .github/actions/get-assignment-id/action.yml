@@ -15,12 +15,12 @@ runs:
       id: get-assignment
       shell: bash
       run: |
-        echo "Branch: ${{ github.pull_request.base.ref }}"
+        echo "Branch: ${{ github.base_ref }}"
         echo "${{ inputs.available_assignments }}"
-        assignment_id=$(echo '${{ inputs.available_assignments }}' | jq -r --arg branch "${{ github.pull_request.base.ref }}" '.[$branch]')
+        assignment_id=$(echo '${{ inputs.available_assignments }}' | jq -r --arg branch "${{ github.base_ref }}" '.[$branch]')
         echo "assignment=$assignment_id"
         if [[ "$assignment_id" == "null" || -z "$assignment_id" ]]; then
-          echo "No assignment found for branch: ${{ github.pull_request.base.ref }}"
+          echo "No assignment found for branch: ${{ github.base_ref }}"
           exit 1
         fi
 
