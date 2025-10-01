@@ -3,15 +3,6 @@ name: Tester workflow
 on:
   workflow_call:
     inputs:
-      course_id:
-        required: true
-        type: string
-      available_assignments:
-        required: true
-        type: string
-      student_id:
-        required: true
-        type: string
       kmom_paths:
         required: true
         type: string
