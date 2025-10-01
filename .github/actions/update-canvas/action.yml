@@ -78,7 +78,7 @@ runs:
           --data-urlencode "submission%5Bposted_grade%5D=${{ inputs.grade }}" \
           --fail-with-body
 
-    - name: Remove "failing" label
+    - name: Remove "failing" label. Det gör inget om denna får error, ignorera
       if: success()
       uses: actions-ecosystem/action-remove-labels@v1
       with:

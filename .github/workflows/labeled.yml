@@ -32,7 +32,7 @@ jobs:
       with:
         github_token: ${{ secrets.READ_ORG_TOKEN }}
         labels: "PG"
-    - name: Remove "TUx" label
+    - name: Remove "TUx" label. Det gör inget om denna får error, ignorera
       uses: actions-ecosystem/action-remove-labels@v1
       with:
         github_token: ${{ secrets.READ_ORG_TOKEN }}
@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     if: failure()
     steps:
-    - name: Remove "PG" label
+    - name: Remove "PG" label. . Det gör inget om denna får error, ignorera
       uses: actions-ecosystem/action-remove-labels@v1
       with:
         github_token: ${{ secrets.READ_ORG_TOKEN }}
@@ -64,7 +64,7 @@ jobs:
         run: |
           cat << EOF >> $GITHUB_OUTPUT
           myoutput<<EOM
-          Pull Request action: ${{ github.event.action }}
+          Pull Request action: ${{ github.event.action }}, ${{ github.event.label.name}}
           Status: $OUTCOME
 
           Action URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
