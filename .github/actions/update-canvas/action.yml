@@ -22,6 +22,9 @@ inputs:
   canvas_api_token:
     required: true
     description: 'Canvas API token'
+  read_org_token:
+    required: true
+    description: 'GitHub API token'
 
 runs:
   using: "composite"
@@ -79,12 +82,12 @@ runs:
       if: success()
       uses: actions-ecosystem/action-remove-labels@v1
       with:
-        github_token: ${{ secrets.READ_ORG_TOKEN }}
+        github_token: ${{ read_org_token }}
         labels: "Integration fail"
 
     - name: Add "failing" label
       if: failure()
       uses: actions-ecosystem/action-add-labels@v1
       with:
-        github_token: ${{ secrets.READ_ORG_TOKEN }}
+        github_token: ${{ read_org_token }}
         labels: "Integration fail"
