@@ -15,7 +15,7 @@ runs:
       shell: bash
       run: |
         echo "Branch: ${{ github.base_ref }}"
-        echo "PR Branch: ${{ toJSON(github.event) }}"
+        echo "PR Branch: ${{ github.event.base.ref }}"
         echo "${{ inputs.available_assignments }}"
         echo '${{ inputs.available_assignments }}' | jq empty || { echo "Invalid JSON"; exit 1; }
 
@@ -31,7 +31,7 @@ runs:
           KMOM="kmom$PADDED"
           echo "Result tag: $KMOM"
         else
-          REF=${{ github.event.pull_request.base.ref && github.event.pull_request.base.ref || github.base_ref }}
+          REF=${{ github.event.base.ref && github.event.base.ref || github.base_ref }}
           KMOM="${$REF#bth/submit/}"   # Remove bth/submit/ from base ref
           echo "Result branch: $KMOM"
         fi
