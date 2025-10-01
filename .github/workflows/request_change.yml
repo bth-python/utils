@@ -24,6 +24,13 @@ jobs:
           github_token: ${{ secrets.READ_ORG_TOKEN }}
           labels: "Needs improvement"
 
+      - name: Remove "PG" label. . Det gör inget om denna får error, ignorera
+        uses: actions-ecosystem/action-remove-labels@v1
+        with:
+          github_token: ${{ secrets.READ_ORG_TOKEN }}
+          labels: "PG"
+        continue-on-error: true
+
       - name: Create comment
         id: created_comment
         run: |

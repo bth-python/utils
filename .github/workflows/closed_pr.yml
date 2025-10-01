@@ -1,7 +1,5 @@
 on:
   workflow_call:
-    # pull_request_review:
-    #   types: [submitted]
     inputs:
       course_id:
         required: true

@@ -3,9 +3,6 @@ name: Grade After PR Merge
 on:
   workflow_call:
     inputs:
-      event:
-        required: true
-        type: string
       course_id:
         required: true
         type: string
@@ -20,22 +17,11 @@ jobs:
   resolve-assignment:
     name: Resolve Assignment from Branch
     runs-on: ubuntu-latest
-    outputs:
-      assignment: ${{ steps.get-assignment.outputs.assignment }}
     steps:
-      - name: Extract assignment from org variable
-        id: get-assignment
-        run: |
-          echo "Branch: $GITHUB_REF_NAME"
-          echo "${{ inputs.available_assignments }}"
-          assignment_id=$(echo '${{ inputs.available_assignments }}' | jq -r --arg branch "$GITHUB_REF_NAME" '.[$branch]')
-          echo "assignment=$assignment_id"
-          if [[ "$assignment_id" == "null" || -z "$assignment_id" ]]; then
-            echo "No assignment found for branch: $GITHUB_REF_NAME"
-            exit 1
-          fi
-
-          echo "assignment=$assignment_id" >> "$GITHUB_OUTPUT"
+      - uses: bth-python/utils/.github/actions/get-assignment-id@dev
+        id: resolve
+        with:
+          available_assignments: ${{ inputs.available_assignments }}
 
   check-authorization:
     name: Check PR Merger Authorization
@@ -112,23 +98,22 @@ jobs:
           Status: $STATUS
           ${{ steps.get_review.outputs.latest_approved_review }}
 
-          User who merged: ${{ fromJson(inputs.event).sender.login }}
-          PR URL: ${{ fromJson(inputs.event).pull_request.html_url }}
+          User who merged: ${{ github.event.sender.login }}
+          PR URL: ${{ github.event.pull_request.html_url }}
           EOM
           EOF
 
-      - uses: bth-python/utils/.github/actions/get-assignment-id@main
+      - uses: bth-python/utils/.github/actions/get-assignment-id@dev
         id: resolve
         with:
           available_assignments: ${{ inputs.available_assignments }}
-          pull_request: ${{ toJson(fromJson(inputs.event).pull_request) }}
 
       - name: Set grade variable
         id: set_grade
         run: echo "grade=${{ (needs.check-authorization.outputs.authorized) && 'G' || 'U' }}" >> $GITHUB_OUTPUT
 
       - name: Update Canvas with closed PR
-        uses: bth-python/utils/.github/actions/update-canvas@main
+        uses: bth-python/utils/.github/actions/update-canvas@dev
         with:
           subcommand: "grade_submission"
           grade: "${{ steps.set_grade.outputs.grade }}"
@@ -137,3 +122,17 @@ jobs:
           course_id: ${{inputs.course_id}}
           assignment_id: ${{ steps.resolve.outputs.assignment }}
           student_id: ${{ inputs.student_id }}
+          read_org_token: "${{ secrets.READ_ORG_TOKEN }}"
+
+
+  label-on-merged:
+    needs: [check-authorization]
+    runs-on: ubuntu-latest
+    if: ${{ (needs.check-authorization.outputs.authorized) }}
+    steps:
+    - name: Remove "PG" label. . Det gör inget om denna får error, ignorera
+      uses: actions-ecosystem/action-remove-labels@v1
+      with:
+        github_token: ${{ secrets.READ_ORG_TOKEN }}
+        labels: "PG"
+      continue-on-error: true
