@@ -29,6 +29,14 @@ on:
         type: string
 
 jobs:
+
+  on-tag:
+    if: startsWith(github.ref, 'refs/tags/')
+    uses: bth-python/utils/.github/workflows/examiner.yml@dev
+    with:
+      kmom_paths: ${{ inputs.kmom_paths }}
+    secrets: inherit
+
   on-pr-merged:
     if: ${{ inputs.event_name == 'pull_request' && fromJson(inputs.event).pull_request.merged == true && github.base_ref != 'bth/submit/test-gitconfig' }}
     uses: bth-python/utils/.github/workflows/on_merge.yml@dev

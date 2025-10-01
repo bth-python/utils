@@ -1,0 +1,64 @@
+name: Tester workflow
+
+on:
+  workflow_call:
+    inputs:
+      course_id:
+        required: true
+        type: string
+      available_assignments:
+        required: true
+        type: string
+      student_id:
+        required: true
+        type: string
+      kmom_paths:
+        required: true
+        type: string
+
+jobs:
+  generate-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      kmoms: ${{ steps.set-matrix.outputs.kmoms }}
+
+    steps:
+      - name: Extract kmom based on tag
+        id: set-matrix
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"   # Remove refs/tags/
+          NUM=$(echo "$TAG" | sed -E 's/^v([0-9]+).*/\1/')
+          echo "First number after v: $NUM"
+          PADDED=$(printf "%02d" "$NUM")
+          echo "Result: $PADDED"
+          KMOM="kmom$PADDED"
+
+
+          KMOMS=$(echo '${{ inputs.kmom_paths }}' | jq -c --arg b "$KMOM" '.[$b].kmoms // []')
+
+          echo "✅ Kmom: kmom$PADDED"
+
+          echo "kmoms={\"folder\":$KMOMS}" >> $GITHUB_OUTPUT
+
+  run-kmoms:
+    needs: [generate-matrix]
+    if: needs.generate-matrix.outputs.kmoms != '{"folder":[]}'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: setup-python
+        uses: bth-python/utils/.github/actions/setup-python@main
+
+      - name: "Validate code"
+        run: uv run ruff check $(echo "${{ needs.generate-matrix.outputs.kmoms }}" | sed 's/tests/src/')
+
+      - name: Run kmom test in ${{ needs.generate-matrix.outputs.kmoms }}
+        run: |
+          echo "🔬 Running kmom: ${{ needs.generate-matrix.outputs.kmoms }}"
+          uv run tester -f ${{ needs.generate-matrix.outputs.kmoms }}
+
+      - name: Run extra tests in ${{ needs.generate-matrix.outputs.kmoms }}
+        continue-on-error: true
+        run: |
+          echo "🔬 Running extras: ${{ needs.generate-matrix.outputs.kmoms }}. It is OK if these tests fail. It will not affect your grade"
+          uv run tester -f -e ${{ needs.generate-matrix.outputs.kmoms }}
