@@ -35,7 +35,6 @@ jobs:
         id: resolve
         with:
           available_assignments: ${{ inputs.available_assignments }}
-          pull_request: ${{ github.event.pull_request }}
 
       - name: Update Canvas result from tests
         uses: bth-python/utils/.github/actions/update-canvas@main

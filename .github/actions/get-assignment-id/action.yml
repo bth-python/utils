@@ -4,9 +4,6 @@ inputs:
   available_assignments:
     description: "JSON object mapping branch names to assignment IDs"
     required: true
-  pull_request:
-    description: "Pull request event from GitHub"
-    required: true
 outputs:
   assignment:
     description: "The assignment ID corresponding to the current branch"
