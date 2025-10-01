@@ -25,7 +25,7 @@ jobs:
             KMOM="kmom$PADDED"
             echo "Result tag: $KMOM"
           else
-            KMOM="${github.base_ref#bth/submit/}"   # Remove bth/submit/ from base ref
+            KMOM="${GITHUB_BASE_REF#bth/submit/}"   # Remove bth/submit/ from base ref
             echo "Result branch: $KMOM"
           fi
 
