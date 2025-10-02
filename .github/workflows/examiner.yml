@@ -67,7 +67,7 @@ jobs:
       - name: Extract labs and kmoms based on PR branch
         id: set-matrix
         run: |
-          BRANCH="${{ github.base_ref }}"
+          BRANCH="$BRANCH_NAME"
           echo "📌 Branch: $BRANCH"
 
           LABS=$(echo '${{ inputs.kmom_paths }}' | jq -c --arg b "$BRANCH" '.[$b].labs // []')
@@ -127,6 +127,38 @@ jobs:
           echo "🔬 Running extras: ${{ matrix.folder }}. It is OK if these tests fail. It will not affect your grade"
           uv run tester -f -e ${{ matrix.folder }}
 
+  label-on-success:
+    needs: [run-kmoms, run-labs]
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+      - name: Add "PG" label
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          github_token: ${{ secrets.READ_ORG_TOKEN }}
+          labels: "PG"
+      - name: Remove "TUx" label
+        uses: actions-ecosystem/action-remove-labels@v1
+        with:
+          github_token: ${{ secrets.READ_ORG_TOKEN }}
+          labels: "TUx"
+
+  label-on-failure:
+    needs: [run-kmoms, run-labs]
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
+      - name: Add "failing" label
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          github_token: ${{ secrets.READ_ORG_TOKEN }}
+          labels: "TUx"
+      - name: Remove "PG" label
+        uses: actions-ecosystem/action-remove-labels@v1
+        with:
+          github_token: ${{ secrets.READ_ORG_TOKEN }}
+          labels: "PG"
+
   grade-canvas:
     needs: [run-kmoms, run-labs]
     runs-on: ubuntu-latest
@@ -154,10 +186,17 @@ jobs:
 
       - name: Set grade variable
         id: set_grade
-        run: echo "grade=${{ (needs.run-kmoms.result == 'success' && needs.run-labs.result == 'success') && 'PG' || 'Ux' }}" >> $GITHUB_OUTPUT
+        run: echo "grade=${{ (needs.run-kmoms.result == 'success' && needs.run-labs.result == 'success') && 'PG' || 'TUx' }}" >> $GITHUB_OUTPUT
+
+      - name: Add label
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          github_token: ${{ secrets.READ_ORG_TOKEN }}
+          labels: "${{ steps.set_grade.outputs.grade }}"
 
       - name: Update Canvas result from tests
         uses: bth-python/utils/.github/actions/update-canvas@main
+        continue-on-error: false
         with:
           subcommand: "grade_submission"
           grade: "${{ steps.set_grade.outputs.grade }}"

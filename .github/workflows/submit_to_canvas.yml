@@ -1,11 +1,8 @@
+name: Submit assignment to canvas
+
 on:
   workflow_call:
-    # pull_request_review:
-    #   types: [submitted]
     inputs:
-      event:
-        required: true
-        type: string
       course_id:
         required: true
         type: string
@@ -17,21 +14,20 @@ on:
         type: string
 
 jobs:
-  report-requested-changes-to-canvas:
+  submit-canvas:
     runs-on: ubuntu-latest
     steps:
-      - name: Create comment
-        id: created_comment
+      - name: Create body
+        id: created_body
         run: |
           cat << EOF >> $GITHUB_OUTPUT
           myoutput<<EOM
-          Review State: ${{ fromJson(inputs.event).review.state }}
-          Review Comment:
-          ${{ fromJson(inputs.event).review.body }}
-
-
-          Reviewer: ${{ fromJson(inputs.event).review.user.login }}
-          Review URL: ${{ fromJson(inputs.event).review.html_url }}
+          Pull Request action: ${{ github.event.action }}<br>
+          <br>
+          <h2>${{github.event.pull_request.title}}<br></h2>
+          ${{github.event.pull_request.body}}<br>
+          <br>
+          PR URL: <a class='inline_disabled' href='${{ github.event.pull_request.html_url }}' target='_blank' rel='noopener noreferrer'>${{ github.event.pull_request.html_url }}</a>
           EOM
           EOF
 
@@ -39,15 +35,14 @@ jobs:
         id: resolve
         with:
           available_assignments: ${{ inputs.available_assignments }}
-          pull_request: ${{ toJson(fromJson(inputs.event).pull_request) }}
 
-      - name: Update Canvas with need to fix
+      - name: Update Canvas result from tests
         uses: bth-python/utils/.github/actions/update-canvas@main
         with:
-          subcommand: "grade_submission"
-          grade: "Ux"
-          comment: "${{ steps.created_comment.outputs.myoutput }}"
+          subcommand: "submit_assignment"
+          comment: "${{ steps.created_body.outputs.myoutput }}"
           canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
+          student_id: ${{ inputs.student_id }}
           course_id: ${{inputs.course_id}}
           assignment_id: ${{ steps.resolve.outputs.assignment }}
-          student_id: ${{ inputs.student_id }}
+          read_org_token: "${{ secrets.READ_ORG_TOKEN }}"

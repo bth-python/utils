@@ -1,0 +1,95 @@
+name: Run tester when labeled
+
+on:
+  workflow_call:
+    inputs:
+      course_id:
+        required: true
+        type: string
+      available_assignments:
+        required: true
+        type: string
+      student_id:
+        required: true
+        type: string
+      kmom_paths:
+        required: true
+        type: string
+
+jobs:
+  run-tester:
+    uses: bth-python/utils/.github/workflows/tester.yml@main
+    with:
+      kmom_paths: ${{ inputs.kmom_paths }}
+
+  label-on-success:
+    needs: [run-tester]
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+    - name: Add "PG" label
+      uses: actions-ecosystem/action-add-labels@v1
+      with:
+        github_token: ${{ secrets.READ_ORG_TOKEN }}
+        labels: "PG"
+    - name: Remove "TUx" label. Det gör inget om denna får error, ignorera
+      uses: actions-ecosystem/action-remove-labels@v1
+      with:
+        github_token: ${{ secrets.READ_ORG_TOKEN }}
+        labels: "TUx"
+      continue-on-error: true
+
+  label-on-failure:
+    needs: [run-tester]
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
+    - name: Remove "PG" label. . Det gör inget om denna får error, ignorera
+      uses: actions-ecosystem/action-remove-labels@v1
+      with:
+        github_token: ${{ secrets.READ_ORG_TOKEN }}
+        labels: "PG"
+      continue-on-error: true
+
+
+  grade-canvas:
+    needs: [run-tester]
+    runs-on: ubuntu-latest
+    if: always()
+    env:
+      OUTCOME: ${{ needs.run-tester.result == 'success' && 'All tests have passed.' || 'Something failed, look through logs to see what you need to fix.' }}
+    steps:
+      - name: Create comment
+        id: created_comment
+        run: |
+          cat << EOF >> $GITHUB_OUTPUT
+          myoutput<<EOM
+          Pull Request action: ${{ github.event.action }}, ${{ github.event.label.name}}
+          Status: $OUTCOME
+
+          Action URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          EOM
+          EOF
+
+      - uses: bth-python/utils/.github/actions/get-assignment-id@main
+        id: resolve
+        with:
+          available_assignments: ${{ inputs.available_assignments }}
+
+      - name: Set grade variable
+        id: set_grade
+        run: echo "grade=${{ needs.run-tester.result == 'success' && 'PG' || 'TUx' }}" >> $GITHUB_OUTPUT
+
+      - name: Update Canvas result from tests
+        uses: bth-python/utils/.github/actions/update-canvas@main
+        continue-on-error: false
+        with:
+          subcommand: "grade_submission"
+          grade: "${{ steps.set_grade.outputs.grade }}"
+          comment: "${{ steps.created_comment.outputs.myoutput }}"
+          canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
+          student_id: ${{ inputs.student_id }}
+          course_id: ${{inputs.course_id}}
+          assignment_id: ${{ steps.resolve.outputs.assignment }}
+          read_org_token: "${{ secrets.READ_ORG_TOKEN }}"
+

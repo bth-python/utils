@@ -3,18 +3,6 @@ name: Decider Workflow
 on:
   workflow_call:
     inputs:
-      event_name:
-        required: true
-        type: string
-      event:
-        required: true
-        type: string
-      pr_action:
-        required: false
-        type: string
-      review_state:
-        required: false
-        type: string
       course_id:
         required: true
         type: string
@@ -29,64 +17,73 @@ on:
         type: string
 
 jobs:
-  on-pr-merged:
-    if: ${{ inputs.event_name == 'pull_request' && fromJson(inputs.event).pull_request.merged == true && github.base_ref != 'bth/submit/test-gitconfig' }}
-    uses: bth-python/utils/.github/workflows/on_merge.yml@main
+
+  on-tag:
+    if: startsWith(github.ref, 'refs/tags/')
+    uses: bth-python/utils/.github/workflows/tester.yml@main
     with:
-      course_id: ${{ inputs.course_id }}
-      student_id: ${{ inputs.student_id }}
-      available_assignments: ${{ inputs.available_assignments }}
-      event: ${{ inputs.event }}
+      kmom_paths: ${{ inputs.kmom_paths }}
     secrets: inherit
 
-
-
-  on-pr-closed:
-    if: ${{ inputs.event_name == 'pull_request' && inputs.pr_action == 'closed' && !fromJson(inputs.event).pull_request.merged == true && github.base_ref != 'bth/submit/test-gitconfig' }}
-    uses: bth-python/utils/.github/workflows/closed_pr.yml@main
+  on-labeled:
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'labeled' && ( github.event.label.name == 'Submitted' || github.event.label.name == 'Re-submitted' )  && github.base_ref != 'bth/submit/test-gitconfig'}}
+    uses: bth-python/utils/.github/workflows/labeled.yml@main
     with:
-      pr_action: ${{ inputs.pr_action }}
-      event: ${{ inputs.event }}
-      course_id: ${{ inputs.course_id }}
-      available_assignments: ${{ inputs.available_assignments }}
-      student_id: ${{ inputs.student_id }}
-    secrets: inherit
-
-
-
-  on-pr-opened:
-    if: ${{ inputs.event_name == 'pull_request' && (inputs.pr_action == 'opened' || inputs.pr_action == 'synchronize') && github.base_ref != 'bth/submit/test-gitconfig'}}
-    uses: bth-python/utils/.github/workflows/examiner.yml@main
-    with:
-      pr_action: ${{ inputs.pr_action  }}
-      event: ${{ inputs.event }}
       course_id: ${{ inputs.course_id }}
       available_assignments: ${{ inputs.available_assignments }}
       student_id: ${{ inputs.student_id }}
       kmom_paths: ${{ inputs.kmom_paths }}
     secrets: inherit
 
-
+  on-pr-opened:
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'opened' && github.base_ref != 'bth/submit/test-gitconfig'}}
+    uses: bth-python/utils/.github/workflows/submit_to_canvas.yml@main
+    with:
+      course_id: ${{ inputs.course_id }}
+      available_assignments: ${{ inputs.available_assignments }}
+      student_id: ${{ inputs.student_id }}
+    secrets: inherit
 
   on-requested-change:
-    if: ${{ inputs.event_name == 'pull_request_review' && inputs.review_state == 'changes_requested' && github.base_ref != 'bth/submit/test-gitconfig' }}
-    uses: bth-python/utils/.github/workflows/need_fix.yml@main
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'Needs improvement' && github.base_ref != 'bth/submit/test-gitconfig'}}
+    uses: bth-python/utils/.github/workflows/request_change.yml@main
     with:
-      event: ${{ inputs.event }}
       course_id: ${{ inputs.course_id }}
       student_id: ${{ inputs.student_id }}
       available_assignments: ${{ inputs.available_assignments }}
     secrets: inherit
 
+  on-pr-merged:
+    if: ${{ github.event_name == 'pull_request_review' && github.event.review.state == 'approved' && github.base_ref != 'bth/submit/test-gitconfig' }}
+    uses: bth-python/utils/.github/workflows/on_merge.yml@main
+    with:
+      course_id: ${{ inputs.course_id }}
+      student_id: ${{ inputs.student_id }}
+      available_assignments: ${{ inputs.available_assignments }}
+    secrets: inherit
 
+  on-pr-not-approved:
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'Submission not approved' && github.base_ref != 'bth/submit/test-gitconfig'}}
+    uses: bth-python/utils/.github/workflows/not_approved.yml@main
+    with:
+      course_id: ${{ inputs.course_id }}
+      available_assignments: ${{ inputs.available_assignments }}
+      student_id: ${{ inputs.student_id }}
+    secrets: inherit
 
+  on-pr-closed:
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' && !github.event.pull_request.merged == true && github.base_ref != 'bth/submit/test-gitconfig' }}
+    uses: bth-python/utils/.github/workflows/closed_pr.yml@main
+    with:
+      course_id: ${{ inputs.course_id }}
+      available_assignments: ${{ inputs.available_assignments }}
+      student_id: ${{ inputs.student_id }}
+    secrets: inherit
 
   on-pr-opened-test-gitconfig:
-    if: ${{ inputs.event_name == 'pull_request' && inputs.pr_action == 'opened' && github.base_ref == 'bth/submit/test-gitconfig' }}
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'opened' && github.base_ref == 'bth/submit/test-gitconfig' }}
     uses: bth-python/utils/.github/workflows/test-gitconfig.yml@main
     with:
-      pr_action: ${{ inputs.pr_action }}
-      event: ${{ inputs.event }}
       course_id: ${{ inputs.course_id }}
       available_assignments: ${{ inputs.available_assignments }}
       student_id: ${{ inputs.student_id }}

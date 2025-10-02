@@ -4,9 +4,6 @@ inputs:
   available_assignments:
     description: "JSON object mapping branch names to assignment IDs"
     required: true
-  pull_request:
-    description: "Pull request event from GitHub"
-    required: true
 outputs:
   assignment:
     description: "The assignment ID corresponding to the current branch"
@@ -14,16 +11,24 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: Debug
+      shell: bash
+      run: |
+        echo "Branch: ${{ github.base_ref }}"
+        echo "PR Branch: ${{ github.event.pull_request.base.ref }}"
+        echo "${{ inputs.available_assignments }}"
+        echo '${{ inputs.available_assignments }}' | jq empty || { echo "Invalid JSON"; exit 1; }
+
     - name: Extract assignment from org variable
       id: get-assignment
       shell: bash
       run: |
-        echo "Branch: ${{ fromJson(inputs.pull_request).base.ref }}"
-        echo "${{ inputs.available_assignments }}"
-        assignment_id=$(echo '${{ inputs.available_assignments }}' | jq -r --arg branch "${{ fromJson(inputs.pull_request).base.ref }}" '.[$branch]')
+        REF=${{ github.event.pull_request.base.ref && github.event.pull_request.base.ref || github.base_ref }}
+        echo "Result branch: $KMOM"
+        assignment_id=$(echo '${{ inputs.available_assignments }}' | jq -r --arg branch "${REF}" '.[$branch]')
         echo "assignment=$assignment_id"
         if [[ "$assignment_id" == "null" || -z "$assignment_id" ]]; then
-          echo "No assignment found for branch: ${{ fromJson(inputs.pull_request).base.ref }}"
+          echo "No assignment found for branch: ${{ github.base_ref }}"
           exit 1
         fi
 
