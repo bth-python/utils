@@ -38,13 +38,13 @@ jobs:
           EOM
           EOF
 
-      - uses: bth-python/utils/.github/actions/get-assignment-id@dev
+      - uses: bth-python/utils/.github/actions/get-assignment-id@main
         id: resolve
         with:
           available_assignments: ${{ inputs.available_assignments }}
 
       - name: Update Canvas with closed PR
-        uses: bth-python/utils/.github/actions/update-canvas@dev
+        uses: bth-python/utils/.github/actions/update-canvas@main
         with:
           subcommand: "grade_submission"
           grade: ${{ steps.check_files.outcome == 'success' && 'G' || 'Ux' }}

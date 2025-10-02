@@ -18,7 +18,7 @@ on:
 
 jobs:
   run-tester:
-    uses: bth-python/utils/.github/workflows/tester.yml@dev
+    uses: bth-python/utils/.github/workflows/tester.yml@main
     with:
       kmom_paths: ${{ inputs.kmom_paths }}
 
@@ -71,7 +71,7 @@ jobs:
           EOM
           EOF
 
-      - uses: bth-python/utils/.github/actions/get-assignment-id@dev
+      - uses: bth-python/utils/.github/actions/get-assignment-id@main
         id: resolve
         with:
           available_assignments: ${{ inputs.available_assignments }}
@@ -81,7 +81,7 @@ jobs:
         run: echo "grade=${{ needs.run-tester.result == 'success' && 'PG' || 'TUx' }}" >> $GITHUB_OUTPUT
 
       - name: Update Canvas result from tests
-        uses: bth-python/utils/.github/actions/update-canvas@dev
+        uses: bth-python/utils/.github/actions/update-canvas@main
         continue-on-error: false
         with:
           subcommand: "grade_submission"

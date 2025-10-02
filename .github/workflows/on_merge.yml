@@ -18,7 +18,7 @@ jobs:
     name: Resolve Assignment from Branch
     runs-on: ubuntu-latest
     steps:
-      - uses: bth-python/utils/.github/actions/get-assignment-id@dev
+      - uses: bth-python/utils/.github/actions/get-assignment-id@main
         id: resolve
         with:
           available_assignments: ${{ inputs.available_assignments }}
@@ -121,7 +121,7 @@ jobs:
           EOM
           EOF
 
-      - uses: bth-python/utils/.github/actions/get-assignment-id@dev
+      - uses: bth-python/utils/.github/actions/get-assignment-id@main
         id: resolve
         with:
           available_assignments: ${{ inputs.available_assignments }}
@@ -131,7 +131,7 @@ jobs:
         run: echo "grade=${{ (needs.check-authorization.outputs.authorized) && 'G' || 'U' }}" >> $GITHUB_OUTPUT
 
       - name: Update Canvas with closed PR
-        uses: bth-python/utils/.github/actions/update-canvas@dev
+        uses: bth-python/utils/.github/actions/update-canvas@main
         with:
           subcommand: "grade_submission"
           grade: "${{ steps.set_grade.outputs.grade }}"

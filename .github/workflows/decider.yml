@@ -20,14 +20,14 @@ jobs:
 
   on-tag:
     if: startsWith(github.ref, 'refs/tags/')
-    uses: bth-python/utils/.github/workflows/tester.yml@dev
+    uses: bth-python/utils/.github/workflows/tester.yml@main
     with:
       kmom_paths: ${{ inputs.kmom_paths }}
     secrets: inherit
 
   on-labeled:
     if: ${{ github.event_name == 'pull_request' && github.event.action == 'labeled' && ( github.event.label.name == 'Submitted' || github.event.label.name == 'Re-submitted' )  && github.base_ref != 'bth/submit/test-gitconfig'}}
-    uses: bth-python/utils/.github/workflows/labeled.yml@dev
+    uses: bth-python/utils/.github/workflows/labeled.yml@main
     with:
       course_id: ${{ inputs.course_id }}
       available_assignments: ${{ inputs.available_assignments }}
@@ -37,7 +37,7 @@ jobs:
 
   on-pr-opened:
     if: ${{ github.event_name == 'pull_request' && github.event.action == 'opened' && github.base_ref != 'bth/submit/test-gitconfig'}}
-    uses: bth-python/utils/.github/workflows/submit_to_canvas.yml@dev
+    uses: bth-python/utils/.github/workflows/submit_to_canvas.yml@main
     with:
       course_id: ${{ inputs.course_id }}
       available_assignments: ${{ inputs.available_assignments }}
@@ -46,7 +46,7 @@ jobs:
 
   on-requested-change:
     if: ${{ github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'Needs improvement' && github.base_ref != 'bth/submit/test-gitconfig'}}
-    uses: bth-python/utils/.github/workflows/request_change.yml@dev
+    uses: bth-python/utils/.github/workflows/request_change.yml@main
     with:
       course_id: ${{ inputs.course_id }}
       student_id: ${{ inputs.student_id }}
@@ -55,7 +55,7 @@ jobs:
 
   on-pr-merged:
     if: ${{ github.event_name == 'pull_request_review' && github.event.review.state == 'approved' && github.base_ref != 'bth/submit/test-gitconfig' }}
-    uses: bth-python/utils/.github/workflows/on_merge.yml@dev
+    uses: bth-python/utils/.github/workflows/on_merge.yml@main
     with:
       course_id: ${{ inputs.course_id }}
       student_id: ${{ inputs.student_id }}
@@ -64,7 +64,7 @@ jobs:
 
   on-pr-not-approved:
     if: ${{ github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'Submission not approved' && github.base_ref != 'bth/submit/test-gitconfig'}}
-    uses: bth-python/utils/.github/workflows/not_approved.yml@dev
+    uses: bth-python/utils/.github/workflows/not_approved.yml@main
     with:
       course_id: ${{ inputs.course_id }}
       available_assignments: ${{ inputs.available_assignments }}
@@ -73,7 +73,7 @@ jobs:
 
   on-pr-closed:
     if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' && !github.event.pull_request.merged == true && github.base_ref != 'bth/submit/test-gitconfig' }}
-    uses: bth-python/utils/.github/workflows/closed_pr.yml@dev
+    uses: bth-python/utils/.github/workflows/closed_pr.yml@main
     with:
       course_id: ${{ inputs.course_id }}
       available_assignments: ${{ inputs.available_assignments }}
@@ -82,7 +82,7 @@ jobs:
 
   on-pr-opened-test-gitconfig:
     if: ${{ github.event_name == 'pull_request' && github.event.action == 'opened' && github.base_ref == 'bth/submit/test-gitconfig' }}
-    uses: bth-python/utils/.github/workflows/test-gitconfig.yml@dev
+    uses: bth-python/utils/.github/workflows/test-gitconfig.yml@main
     with:
       course_id: ${{ inputs.course_id }}
       available_assignments: ${{ inputs.available_assignments }}
