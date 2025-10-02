@@ -62,6 +62,16 @@ jobs:
       available_assignments: ${{ inputs.available_assignments }}
     secrets: inherit
 
+  on-pr-not-approved:
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'Submission not approved' && github.base_ref != 'bth/submit/test-gitconfig'}}
+    uses: bth-python/utils/.github/workflows/not_approved.yml@dev
+    with:
+      course_id: ${{ inputs.course_id }}
+      available_assignments: ${{ inputs.available_assignments }}
+      student_id: ${{ inputs.student_id }}
+      kmom_paths: ${{ inputs.kmom_paths }}
+    secrets: inherit
+
   on-pr-closed:
     if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' && !github.event.pull_request.merged == true && github.base_ref != 'bth/submit/test-gitconfig' }}
     uses: bth-python/utils/.github/workflows/closed_pr.yml@dev
