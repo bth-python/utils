@@ -80,16 +80,14 @@ jobs:
       student_id: ${{ inputs.student_id }}
     secrets: inherit
 
-  # on-pr-opened-test-gitconfig:
-  #   if: ${{ inputs.event_name == 'pull_request' && inputs.pr_action == 'opened' && github.base_ref == 'bth/submit/test-gitconfig' }}
-  #   uses: bth-python/utils/.github/workflows/test-gitconfig.yml@dev
-  #   with:
-  #     pr_action: ${{ inputs.pr_action }}
-  #     event: ${{ inputs.event }}
-  #     course_id: ${{ inputs.course_id }}
-  #     available_assignments: ${{ inputs.available_assignments }}
-  #     student_id: ${{ inputs.student_id }}
-  #   secrets: inherit
+  on-pr-opened-test-gitconfig:
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'opened' && github.base_ref == 'bth/submit/test-gitconfig' }}
+    uses: bth-python/utils/.github/workflows/test-gitconfig.yml@dev
+    with:
+      course_id: ${{ inputs.course_id }}
+      available_assignments: ${{ inputs.available_assignments }}
+      student_id: ${{ inputs.student_id }}
+    secrets: inherit
 
   # on-other:
   #   if:
