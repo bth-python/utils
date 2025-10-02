@@ -45,7 +45,7 @@ jobs:
     secrets: inherit
 
   on-requested-change:
-    if: ${{ github.event_name == 'pull_request_review' && github.event.review.state == 'changes_requested' && github.base_ref != 'bth/submit/test-gitconfig' }}
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'Needs improvement' && github.base_ref != 'bth/submit/test-gitconfig'}}
     uses: bth-python/utils/.github/workflows/request_change.yml@dev
     with:
       course_id: ${{ inputs.course_id }}
@@ -69,7 +69,6 @@ jobs:
       course_id: ${{ inputs.course_id }}
       available_assignments: ${{ inputs.available_assignments }}
       student_id: ${{ inputs.student_id }}
-      kmom_paths: ${{ inputs.kmom_paths }}
     secrets: inherit
 
   on-pr-closed:

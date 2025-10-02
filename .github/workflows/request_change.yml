@@ -18,12 +18,6 @@ jobs:
   report-requested-changes-to-canvas:
     runs-on: ubuntu-latest
     steps:
-      - name: Add "Needs improvement" label
-        uses: actions-ecosystem/action-add-labels@v1
-        with:
-          github_token: ${{ secrets.READ_ORG_TOKEN }}
-          labels: "Needs improvement"
-
       - name: Remove "PG" label. . Det gör inget om denna får error, ignorera
         uses: actions-ecosystem/action-remove-labels@v1
         with:
@@ -31,18 +25,39 @@ jobs:
           labels: "PG"
         continue-on-error: true
 
+
+      - name: Get last review comment
+        id: last_review_comment
+        uses: actions/github-script@v7
+        with:
+            github-token: ${{ secrets.READ_ORG_TOKEN }}
+            script: |
+              const { data: reviews } = await github.rest.pulls.listReviews({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.payload.pull_request.number,
+                per_page: 100
+              });
+              if (reviews.length > 0) {
+                const lastReview = reviews[reviews.length - 1];
+                core.setOutput('last_review_body', lastReview.body || '');
+                core.setOutput('last_review_user', lastReview.user.login);
+                const reviewUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/pull/${context.payload.pull_request.number}#pullrequestreview-${lastReview.id}`;
+                core.setOutput('last_review_url', reviewUrl);
+              }
+
       - name: Create comment
         id: created_comment
         run: |
           cat << EOF >> $GITHUB_OUTPUT
           myoutput<<EOM
-          Review State: ${{ github.event.review.state }}
+          Review State: Needs improvement
           Review Comment:
-          ${{ github.event.review.body }}
+          ${{ steps.last_review_comment.outputs.last_review_body }} 
 
 
-          Reviewer: ${{ github.event.review.user.login }}
-          Review URL: ${{ github.event.review.html_url }}
+          Reviewer: ${{ steps.last_review_comment.outputs.last_review_user }}
+          Review URL: ${{ steps.last_review_comment.outputs.last_review_url }}
           EOM
           EOF
 
