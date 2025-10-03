@@ -1,8 +1,8 @@
 import os
-import requests
-from requests.auth import HTTPBasicAuth
-from dotenv import load_dotenv
 
+import requests
+from dotenv import load_dotenv
+from requests.auth import HTTPBasicAuth
 
 # Load variables from .env into the environment
 load_dotenv()
@@ -27,6 +27,31 @@ LABELS = [
         "name": "Submitted",
         "description": "Used by students to mark submissions",
         "color": "0052CC"
+    },
+    {
+        "name": "Integration fail",
+        "description": "Something in the workflow code failed. If you can't figure out what it is ask for help.",
+        "color": "fbca04"
+    },
+    {
+        "name": "PG",
+        "description": "Automated tests passed, wait for a teacher to look at your submission.",
+        "color": "c2e0c6"
+    },
+    {
+        "name": "Re-submitted",
+        "description": "Used by students when turning in after getting 'Needs improvement' from a teacher.",
+        "color": "1d76db"
+    },
+    {
+        "name": "Submission not approved",
+        "description": "Used by teachers to mark submission as not fulfilling the requirements.",
+        "color": "5319e7"
+    },
+    {
+        "name": "TUx",
+        "description": "Something in the automated tests failed. Look it up and fix it.",
+        "color": "e99695"
     }
 ]
 # --- USER CONFIGURATION END ---
