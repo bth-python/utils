@@ -182,7 +182,7 @@ async function processSubmission(submission, course) {
             const repoCreated = await createRepo(organization, githubUsername, repoName, notify);
             if (repoCreated) {
                 await notify(error.status,
-                    `${githubUsername} was already a member of the organisation.\nYour repo: ${repoUrl}`
+                    `Invitation sent to ${githubUsername} successfully.\n\nGo to ${orgInviteUrl} to accept the invitation.\nYour repo: ${repoUrl}`
                 );
             }
         } else {
