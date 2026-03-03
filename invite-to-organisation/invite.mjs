@@ -4,12 +4,13 @@ import fs from 'fs/promises';
 
 // const REPO_URL = `https://github.com/${process.env["ORGANIZATION"]}/${process.env["REPO"]}`;
 const EMAILREGEX = /(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/i;
-const EMAILINDEX = 0;
-const USERIDINDEX = 1;
-const ATTEMPTINDEX = 2;
-const COURSEINDEX = 0;
-const ASSIGNMENTINDEX = 1;
-const ORGANIZATIONINDEX = 2;
+const GITHUB_USERNAME_INDEX = 0;
+const EMAIL_INDEX = 1;
+const USER_ID_INDEX = 2;
+const ATTEMPT_INDEX = 3;
+const COURSE_INDEX = 0;
+const ASSIGNMENT_INDEX = 1;
+const ORGANIZATION_INDEX = 2;
 
 const octokit = new Octokit({
     auth: process.env["GITHUB_TOKEN"]
@@ -22,11 +23,12 @@ async function fetchStudentSubmissions(courseID, assignmentID) {
     let i = 1
     do {
         submitted = submitted.concat(result.filter(item => item.workflow_state === "submitted").map(item => {
-            const matches = item.body.match(EMAILREGEX);
+            const matches = item.body.replace(/<[^>]*>/g, '').trim();
+            
             if (matches) {
-                return [matches[0], item.user.id, item.attempt];
+                return [matches, item.user.login_id, item.user.id, item.attempt];
             } else {
-                return [null, item.user.id, item.attempt]
+                return [null, item.user.login_id, item.user.id, item.attempt]
             }
         }));
         
@@ -86,72 +88,70 @@ const updateCanvasPartial = (courseID, assignmentID, user, attempt) => {
     } 
 }
 
-async function getGitHubUsernameFromEmail(email) {
-    try {
-        const res = await octokit.request('GET /search/users', {
-            q: `${email} in:email`,
-            headers: {
-                'X-GitHub-Api-Version': '2022-11-28'
-            }
-        });
-        if (res.data.total_count > 0) {
-            return res.data.items[0].login;
-        }
-        console.error(`[getGitHubUsernameFromEmail] No GitHub user found for email: ${email}`);
-        return null;
-    } catch (error) {
-        console.error(`[getGitHubUsernameFromEmail] Failed to find GitHub username for ${email} (status=${error.status}):`, error.message);
-        return null;
-    }
-}
 
-async function addStudentsToGitHubOrganizationAndCreateRepo(submission, course, organization) {
-    const ORG_URL = `https://github.com/orgs/${organization}/invitation`;
-    let updateCanvas = updateCanvasPartial(course[COURSEINDEX], course[ASSIGNMENTINDEX], submission[USERIDINDEX], submission[ATTEMPTINDEX])
+async function addStudentsToGitHubOrganizationAndCreateRepo(submission, course) {
+    const ORG_URL = `https://github.com/orgs/${course[ORGANIZATION_INDEX]}/invitation`;
+    let updateCanvas = updateCanvasPartial(course[COURSE_INDEX], course[ASSIGNMENT_INDEX], submission[USER_ID_INDEX], submission[ATTEMPT_INDEX])
     
-    if (submission[EMAILINDEX] === null) {
-        console.error(`[submission user=${submission[USERIDINDEX]}] Could not extract valid email address from submission.`);
-        updateCanvas(410, `Could not extract valid email adress from submission.`);
+    if (submission[EMAIL_INDEX] === null) {
+        console.error(`[submission user=${submission[USER_ID_INDEX]}] Could not extract a GitHub username from submission.`);
+        updateCanvas(410, `Could not extract a GitHub username from submission.`);
     } else {
-        const acronym = submission[EMAILINDEX].split('@')[0];
+        const acronym = submission[EMAIL_INDEX].split('@')[0];
         const repoName = `algo-${acronym}`;
-        try {
-            const res = await octokit.request('POST /orgs/{org}/invitations', {
-                org: organization,
-                email: submission[EMAILINDEX],
-                role: 'direct_member',
-                headers: {
-                    'X-GitHub-Api-Version': '2022-11-28'
-                }
-            });
-            if (res.status === 201) {
-                const repoCreated = await createRepo(organization, res.data.login, repoName, updateCanvas);
-                if (repoCreated) {
-                    updateCanvas(res.status, `Invitation sent to ${submission[EMAILINDEX]} successfully.\n\nGo to ${ORG_URL} to accept the invitation. A repo has been created for you and you have been added as a collaborator. Your repo: ${organization}/${repoName}`);
-                }  
-            }
-        } catch (error) {
-            console.log(error);
-            
-            if (error.status === 422) {
-                const message = error.response?.data?.errors?.[0]?.message;
 
-                if (message?.includes("is already a part of this organization")) {
-                    console.log(`[${submission[EMAILINDEX]}] Already a member of ${organization}, proceeding to create repo.`);
-                    const login = await getGitHubUsernameFromEmail(submission[EMAILINDEX]);
-                    const repoCreated = await createRepo(organization, login, repoName, updateCanvas);
-                    if (repoCreated) {
-                        updateCanvas(error.status, `${submission[EMAILINDEX]} is already a member of the organization, ${ORG_URL}. `);
+        try { // get github user id
+            const userRes = await octokit.request('GET /users/{username}', {
+            username: submission[GITHUB_USERNAME_INDEX],
+            headers: {
+                'X-GitHub-Api-Version': '2022-11-28',
+            },
+            });
+
+            const githubUserId = userRes.data.id;
+            console.log(userRes.data.login, githubUserId);
+
+            try {
+                const inviteRes = await octokit.request('POST /orgs/{org}/invitations', {
+                    org: course[ORGANIZATION_INDEX],
+                    invitee_id: githubUserId,
+                    role: 'direct_member',
+                    headers: {
+                    'X-GitHub-Api-Version': '2022-11-28',
+                    },
+                });
+
+                const repoCreated = await createRepo(course[ORGANIZATION_INDEX], submission[GITHUB_USERNAME_INDEX], repoName, updateCanvas);
+                if (repoCreated) {
+                    updateCanvas(inviteRes.status, `Invitation sent to ${submission[GITHUB_USERNAME_INDEX]} successfully.\n\nGo to ${ORG_URL} to accept the invitation. A repo has been created for you and you have been added as a collaborator. Your repo: ${ORG_URL}/${repoName}`);
+                }
+            } catch (error) {
+                console.log(error);
+                
+                if (error.status === 422) { // User already in org or validation error
+                    const message = error.response?.data?.errors?.[0]?.message;
+
+                    if (message?.includes("is already a part of this organization")) {
+                        console.log(`[${submission[GITHUB_USERNAME_INDEX]}] Already a member of ${course[ORGANIZATION_INDEX]}, proceeding to create repo.`);
+
+                        const repoCreated = await createRepo(course[ORGANIZATION_INDEX], submission[GITHUB_USERNAME_INDEX], repoName, updateCanvas);
+                        if (repoCreated) {
+                            updateCanvas(error.status, `${submission[GITHUB_USERNAME_INDEX]} was already a member of the organisation\n\nA repo has been created for you and you have been added as a collaborator. Your repo: ${ORG_URL}/${repoName}`);
+                        }
+                    } else {
+                        console.error(`[${submission[GITHUB_USERNAME_INDEX]}] Validation error (422): ${message}`);
+                        updateCanvas(error.status, `Validation error for ${submission[GITHUB_USERNAME_INDEX]}:\n${message}`);
                     }
                 } else {
-                    console.error(`[${submission[EMAILINDEX]}] Validation error (422): ${message}`);
-                    updateCanvas(error.status, `Validation error for ${submission[EMAILINDEX]}:\n${message}`);
+                    console.error(`[${submission[GITHUB_USERNAME_INDEX]}] Failed to invite to ${course[ORGANIZATION_INDEX]} (status=${error.status}):`, error);
+                    updateCanvas(error.status, `Failed to invite ${submission[GITHUB_USERNAME_INDEX]}: ${error}`);
                 }
-            } else {
-                console.error(`[${submission[EMAILINDEX]}] Failed to invite to ${organization} (status=${error.status}):`, error);
-                updateCanvas(error.status, `Failed to invite ${submission[EMAILINDEX]}: ${error}`);
             }
-        }
+        } catch (error) {
+                console.log(error);
+                updateCanvas(error.status, `Could not find a GitHub user with the username ${submission[GITHUB_USERNAME_INDEX]}:\n${message}`);
+            }
+        return
     }
 }
 
@@ -197,13 +197,13 @@ async function createRepo(organization, login, repoName, updateCanvas) {
     return true;
 }
 
+
 let coursesData;
 try {
     const data = await fs.readFile('courses.json', 'utf-8');
     coursesData = JSON.parse(data);
     console.log(`Loaded ${coursesData} courses from courses.json`);
     
-    // You can now use coursesData as needed
 } catch (err) {
     console.error('Failed to read courses.json:', err);
 }
@@ -211,17 +211,19 @@ try {
 for (const course of coursesData) {
     console.log(`Getting submissions for course ${course}`);
     
-    // const submissions = await fetchStudentSubmissions(course[COURSEINDEX], course[ASSIGNMENTINDEX])
-    // console.log(`Found emails: ${submissions}`);
+    const submissions = await fetchStudentSubmissions(course[COURSE_INDEX], course[ASSIGNMENT_INDEX])
+    console.log(`Found emails: ${submissions}`);
     // let submissions;
-    if (course[ORGANIZATIONINDEX] === "bth-algo") {
-        let submissions = [["aarstud@student.bth.se", "aarstud"]];
+    // if (course[ORGANIZATION_INDEX] === "bth-algo") {
+    // let submissions = [[ 'aarstud', 'aarstud@student.bth.se', 32763, 16 ]];
         for (const submission of submissions) {
-            await addStudentsToGitHubOrganizationAndCreateRepo(submission, course, course[ORGANIZATIONINDEX])
-            .catch((error) => console.error(`[main] Unhandled error for submission ${submission[EMAILINDEX]}:`, error));
+            console.log(submission);
+            
+            await addStudentsToGitHubOrganizationAndCreateRepo(submission, course)
+            .catch((error) => console.error(`[main] Unhandled error for submission ${submission[GITHUB_USERNAME_INDEX]}:`, error));
         }
-    }
-    // addStudentsToGitHubOrganization(emailsIds, course, course[ORGANIZATIONINDEX]);
+    // }
+    // addStudentsToGitHubOrganization(emailsIds, course, course[ORGANIZATION_INDEX]);
 }
 
 
