@@ -104,7 +104,7 @@ async function createRepo(organization, login, repoName, notify) {
     } catch (error) {
         if (error.status === 422) {
             console.error(`[${repoName}] Repository already exists.`);
-            await notify(error.status, `Repository ${repoName} already exists.`);
+            await notify(error.status, `Repository already exists, https://github.com/${organization}/${repoName}`);
         } else {
             console.error(`[${repoName}] Failed to create repository (status=${error.status}):`, error.message);
             await notify(error.status, `Failed to create repository ${repoName}: ${error.message}`);
@@ -122,7 +122,7 @@ async function createRepo(organization, login, repoName, notify) {
         });
     } catch (error) {
         console.error(`[${repoName}] Failed to add ${login} as collaborator (status=${error.status}):`, error.message);
-        await notify(error.status, `Failed to add ${login} as collaborator to ${repoName}: ${error.message}`);
+        await notify(error.status, `Failed to add ${login} as collaborator to https://github.com/${organization}/${repoName}: ${error.message}`);
         return false;
     }
 
@@ -141,7 +141,7 @@ async function processSubmission(submission, course) {
 
     if (!githubUsername) {
         console.error(`[user=${userId}] Could not extract a GitHub username from submission.`);
-        await notify(410, `Could not extract a GitHub username from submission.`);
+        await notify(410, `Could not extract a GitHub username from submission. Read the instructions and try again.`);
         return;
     }
 
@@ -166,7 +166,7 @@ async function processSubmission(submission, course) {
         const repoCreated = await createRepo(organization, githubUsername, repoName, notify);
         if (repoCreated) {
             await notify(inviteRes.status,
-                `Invitation sent to ${githubUsername} successfully.\n\nGo to ${orgInviteUrl} to accept the invitation.\nYour repo: ${repoUrl}`
+                `Invitation sent to ${githubUsername} successfully.\n\nGo to ${orgInviteUrl} to accept the invitation.\nCreated this repo for you: ${repoUrl}`
             );
         }
     } catch (error) {
@@ -182,7 +182,7 @@ async function processSubmission(submission, course) {
             const repoCreated = await createRepo(organization, githubUsername, repoName, notify);
             if (repoCreated) {
                 await notify(error.status,
-                    `Invitation sent to ${githubUsername} successfully.\n\nGo to ${orgInviteUrl} to accept the invitation.\nYour repo: ${repoUrl}`
+                    `${githubUsername} is already a member of ${organization}.\n\nCreated this repo for you: ${repoUrl}`
                 );
             }
         } else {
