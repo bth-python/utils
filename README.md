@@ -82,7 +82,7 @@ För att köra integrering mot Canvas måste det finnas lite data på GitHub.
 
 #### Student repository variabler
 
-- `STUDENT_CANVAS_ID` - studentens id på Canvas. En sifferkod. [Guide åt studenter för att lägga till](https://bth-python.github.io/website/laromaterial/kursrepo/lagg-till-studentid/).
+- `STUDENT_CANVAS_ID` - studentens id på Canvas. En sifferkod. [Guide åt studenter för att lägga till](https://bth-python.github.io/laromaterial/kursrepo/lagg-till-studentid/).
 
 ### examiner.yml
 
