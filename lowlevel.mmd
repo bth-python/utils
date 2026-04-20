@@ -1,0 +1,117 @@
+flowchart TD
+    %% ── Entry points (student repo triggers) ──────────────────────
+    EVT_TAG(["`**push tag**
+    student repo`"])
+    EVT_PR_OPEN(["`**pull_request: opened**
+    student repo`"])
+    EVT_PR_CLOSE(["`**pull_request: closed**
+    student repo`"])
+    EVT_LABEL(["`**pull_request: labeled**
+    student repo`"])
+
+    %% ── on_tag.yml ────────────────────────────────────────────────
+    EVT_TAG --> ON_TAG["on_tag.yml
+    on-tag"]
+    ON_TAG --> TESTER
+
+    %% ── on_open_pr.yml ────────────────────────────────────────────
+    EVT_PR_OPEN --> VALIDATE["on_open_pr.yml
+    validate-tag
+    ──────────────
+    Extract kmom from base branch
+    Find latest matching tag
+    Check tag has passing workflow run"]
+
+    VALIDATE -->|workflow_passed == false| CLOSE_PR["close-pr
+    ──────────────
+    Comment error details
+    Close PR"]
+
+    VALIDATE -->|workflow_passed == true| TESTER["tester.yml
+    ──────────────
+    generate-matrix
+    run-kmoms ×N
+    check-results
+    ──────────────
+    out: tests_passed
+    out: test_summary"]
+
+    TESTER -->|tests_passed == false| CLOSE_PR
+    TESTER -->|tests_passed == true| SUBMIT_CANVAS["submit-canvas
+    ──────────────
+    Add 'Tests passed TP' label
+    get-assignment-id
+    update-canvas: submit_assignment
+    update-canvas: grade_submission TP
+    Comment on PR"]
+
+    SUBMIT_CANVAS -->|failure| HANDLE_CANVAS_FAIL["handle-canvas-failure
+    ──────────────
+    Comment Canvas failure
+    Close PR"]
+
+    %% ── on_close_pr.yml ───────────────────────────────────────────
+    EVT_PR_CLOSE --> CHECK_TEAM_CLOSE["on_close_pr.yml
+    check-team
+    ──────────────
+    gh api: bth-algo/teacher
+    membership check"]
+
+    CHECK_TEAM_CLOSE -->|is_teacher == true| TEACHER_CLOSED["teacher-closed
+    ──────────────
+    get-assignment-id
+    update-canvas: grade=null
+    'Teacher X closed PR'"]
+
+    CHECK_TEAM_CLOSE -->|is_teacher == false| STUDENT_CLOSED["student-closed
+    ──────────────
+    get-assignment-id
+    update-canvas: grade=Ux
+    'Create a new PR'"]
+
+    %% ── on_label.yml ──────────────────────────────────────────────
+    EVT_LABEL --> CHECK_LABEL["on_label.yml
+    check-label-and-auth
+    ──────────────
+    Is label in allowed list?
+    If not: check teacher team"]
+
+    CHECK_LABEL -->|label == 'Run tests'| TESTER
+    TESTER -->|always, label path| UPDATE_LABELS["update-tests-labels
+    ──────────────
+    Add/remove 'Tests passed TP'
+    or 'Tests failed' label
+    Remove 'Run tests' label"]
+
+    CHECK_LABEL -->|label starts with 'Grade: ' AND is_teacher| SUBMIT_GRADE["submit-grade
+    ──────────────
+    Extract grade from label
+    get-assignment-id
+    update-canvas: grade_submission
+    Comment grade on PR"]
+
+    CHECK_LABEL -->|label is failing grade AND is_teacher| IF_NOT_PASSED["if-not-passed
+    ──────────────
+    Remove 'Tests passed TP' label"]
+
+    CHECK_LABEL -->|not allowed label AND not teacher| REMOVE_LABEL["remove-unauthorized-label
+    ──────────────
+    Remove label
+    Comment: only teachers can set this"]
+
+    %% ── Shared external actions ───────────────────────────────────
+    TEACHER_CLOSED & STUDENT_CLOSED & SUBMIT_CANVAS & SUBMIT_GRADE --> CANVAS[("Canvas LMS
+    update-canvas action")]
+
+    %% ── Styling ───────────────────────────────────────────────────
+    classDef trigger fill:#4a90d9,color:#fff,stroke:#2c6fad
+    classDef workflow fill:#2d6a4f,color:#fff,stroke:#1b4332
+    classDef job fill:#f0f4f8,color:#1a1a1a,stroke:#aaa
+    classDef external fill:#6c3483,color:#fff,stroke:#4a235a
+    classDef danger fill:#c0392b,color:#fff,stroke:#922b21
+
+    class EVT_TAG,EVT_PR_OPEN,EVT_PR_CLOSE,EVT_LABEL trigger
+    class TESTER workflow
+    class VALIDATE,CHECK_TEAM_CLOSE,CHECK_LABEL,SUBMIT_CANVAS,SUBMIT_GRADE,TEACHER_CLOSED,STUDENT_CLOSED,UPDATE_LABELS,IF_NOT_PASSED,ON_TAG job
+    class CANVAS external
+    class CLOSE_PR,HANDLE_CANVAS_FAIL,REMOVE_LABEL danger

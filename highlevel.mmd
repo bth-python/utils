@@ -1,0 +1,69 @@
+flowchart TD
+    %% ── Triggers ──────────────────────────────────────────────────
+    EVT_TAG(["`🏷️ **Student pushes tag**
+    e.g. v03.0`"])
+    EVT_PR_OPEN(["`📬 **Student opens PR**
+    → bth/submit/kmomXX`"])
+    EVT_PR_CLOSE(["`🚪 **PR is closed**`"])
+    EVT_LABEL(["`🏷️ **Label added to PR**`"])
+
+    %% ── on_tag ────────────────────────────────────────────────────
+    EVT_TAG --> ON_TAG{"Run tests"}
+    ON_TAG -->|✅ pass| TAG_PASS["Tag is now valid
+    for opening a PR"]
+    ON_TAG -->|❌ fail| TAG_FAIL["Tag is rejected
+    Fix errors & push new tag"]
+
+    %% ── on_open_pr ────────────────────────────────────────────────
+    EVT_PR_OPEN --> OPEN_CHECK{"Latest tag has
+    passing tests?"}
+    OPEN_CHECK -->|❌ No valid tag| PR_CLOSED_TAG["PR closed
+    💬 Push a valid tag first"]
+
+    OPEN_CHECK -->|✅ Valid tag| RUN_TESTS{"Run tests
+    on PR code"}
+    RUN_TESTS -->|❌ Tests fail| PR_CLOSED_TESTS["PR closed
+    💬 Fix errors & open new PR"]
+    RUN_TESTS -->|✅ Tests pass| SUBMITTED["Assignment submitted
+    to Canvas 📋
+    🏷️ 'Tests passed TP' label added
+    PR stays open for grading"]
+
+    SUBMITTED -->|⚠️ Canvas error| PR_CLOSED_CANVAS["PR closed
+    💬 Contact instructor"]
+
+    %% ── on_label ──────────────────────────────────────────────────
+    EVT_LABEL --> LABEL_TYPE{"Which label?"}
+
+    LABEL_TYPE -->|🏷️ Run tests| LABEL_TESTS{"Run tests"}
+    LABEL_TESTS -->|✅ pass| LABEL_PASS["🏷️ 'Tests passed TP' added"]
+    LABEL_TESTS -->|❌ fail| LABEL_FAIL["🏷️ 'Tests failed' added"]
+
+    LABEL_TYPE -->|"`🏷️ Grade: X
+    *(teacher only)*`"| GRADED["Grade submitted
+    to Canvas 📋"]
+
+    LABEL_TYPE -->|"`🏷️ Any other label
+    *(non-teacher)*`"| UNAUTHORIZED["Label removed
+    💬 Only teachers can set this"]
+
+    %% ── on_close_pr ───────────────────────────────────────────────
+    EVT_PR_CLOSE --> WHO{"Who closed it?"}
+    WHO -->|👩‍🏫 Teacher| TEACHER_CLOSE["Canvas updated 📋
+    No grade change
+    💬 See PR for details"]
+    WHO -->|👨‍🎓 Student| STUDENT_CLOSE["Canvas updated 📋
+    Grade set to Ux
+    💬 Open a new PR to resubmit"]
+
+    %% ── Styling ───────────────────────────────────────────────────
+    classDef trigger fill:#4a90d9,color:#fff,stroke:#2c6fad
+    classDef decision fill:#e8b84b,color:#1a1a1a,stroke:#b8860b
+    classDef success fill:#2d6a4f,color:#fff,stroke:#1b4332
+    classDef danger fill:#c0392b,color:#fff,stroke:#922b21
+    classDef neutral fill:#5d6d7e,color:#fff,stroke:#2c3e50
+
+    class EVT_TAG,EVT_PR_OPEN,EVT_PR_CLOSE,EVT_LABEL trigger
+    class ON_TAG,OPEN_CHECK,RUN_TESTS,LABEL_TYPE,LABEL_TESTS,WHO decision
+    class TAG_PASS,SUBMITTED,LABEL_PASS,GRADED,TEACHER_CLOSE success
+    class TAG_FAIL,PR_CLOSED_TAG,PR_CLOSED_TESTS,PR_CLOSED_CANVAS,LABEL_FAIL,UNAUTHORIZED,STUDENT_CLOSE danger
