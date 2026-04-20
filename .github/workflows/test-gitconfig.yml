@@ -1,3 +1,5 @@
+name: Check requirements for opening PR
+
 on:
   workflow_call:
     inputs:
@@ -7,12 +9,9 @@ on:
       available_assignments:
         required: true
         type: string
-      student_id:
-        required: true
-        type: string
 
 jobs:
-  report-closed-pr-to-canvas:
+  run-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,36 +20,156 @@ jobs:
         uses: arduino/setup-task@v2
         with:
           version: 3.x
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run check for files Task
+      - name: Run check for repo setup
         id: check_files
-        run: task check-have-files
+        run: task check-repo-setup
 
-      - name: Create comment
-        id: created_comment
+
+  submit-canvas:
+    needs: [run-check]
+    if: needs.run-check.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+
+      - id: created_body
         run: |
           cat << EOF >> $GITHUB_OUTPUT
           myoutput<<EOM
-          Pull Request Action: ${{ github.event.action }}
-          Status: ${{ steps.check_files.outcome == 'success' && '✅ All files found' || '❌ Some files missing' }}
-
-          PR URL: ${{ github.event.pull_request.html_url }}
+          Pull Request action: ${{ github.event.action }}<br>
+          <br>
+          <h2>${{github.event.pull_request.title}}<br></h2>
+          ${{github.event.pull_request.body}}<br>
+          <br>
+          PR URL: <a class='inline_disabled' href='${{ github.event.pull_request.html_url }}' target='_blank' rel='noopener noreferrer'>${{ github.event.pull_request.html_url }}</a>
           EOM
           EOF
+
+      - name: Get Student Canvas ID
+        id: get-canvas-id
+        uses: bth-python/utils/.github/actions/get-student-canvas-id@main
+        with:
+          course_id: ${{ inputs.course_id }}
+          canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
+          read_org_token: ${{ secrets.READ_ORG_TOKEN }}
+          github_login: ${{ github.event.pull_request.user.login }}
 
       - uses: bth-python/utils/.github/actions/get-assignment-id@main
         id: resolve
         with:
           available_assignments: ${{ inputs.available_assignments }}
 
-      - name: Update Canvas with closed PR
+      - name: Submit Assignment to Canvas
+        uses: bth-python/utils/.github/actions/update-canvas@main
+        id: update_canvas
+        with:
+          subcommand: "submit_assignment"
+          comment: "${{ steps.created_body.outputs.myoutput }}"
+          canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
+          student_id: ${{ steps.get-canvas-id.outputs.canvas_student_id }}
+          course_id: ${{inputs.course_id}}
+          assignment_id: ${{ steps.resolve.outputs.assignment }}
+          read_org_token: "${{ secrets.READ_ORG_TOKEN }}"
+
+      - name: Set grade to G in Canvas
         uses: bth-python/utils/.github/actions/update-canvas@main
         with:
           subcommand: "grade_submission"
-          grade: ${{ steps.check_files.outcome == 'success' && 'G' || 'Ux' }}
-          comment: "${{ steps.created_comment.outputs.myoutput }}"
+          comment: "Automated grading: All checks passed."
           canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
+          student_id: ${{ steps.get-canvas-id.outputs.canvas_student_id }}
+          grade: "G"
           course_id: ${{inputs.course_id}}
           assignment_id: ${{ steps.resolve.outputs.assignment }}
-          student_id: ${{ inputs.student_id }}
           read_org_token: "${{ secrets.READ_ORG_TOKEN }}"
+
+      - name: Put comment in PR about submission
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.READ_ORG_TOKEN }}
+          script: |
+            const commentBody = `✅ Assignment submitted to Canvas and graded automatically.`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: commentBody
+            });
+
+      - name: Merge PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.READ_ORG_TOKEN }}
+          script: |
+            await github.rest.pulls.merge({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              merge_method: 'merge'
+            });
+
+
+
+  handle-canvas-failure:
+    needs: [submit-canvas]
+    if: always() && needs.submit-canvas.result == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment on PR about Canvas submission failure
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.READ_ORG_TOKEN }}
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## ❌ Canvas Submission Failed\n\nThe assignment could not be submitted to Canvas. This is likely a system issue.\n\n### What to do: Go through the instructions of setting up the repo and make sure you have done all steps correctly. If you are sure everything is correct, then:\
+                \n1. Contact your instructor or course administrator\n2. Provide them with this PR link for help\n\nThis PR has been automatically closed.\n\n### You will need to open a new PR when you have resolved the issue.`
+            });
+
+      - name: Close PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.READ_ORG_TOKEN }}
+          script: |
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              state: 'closed'
+            });
+
+  close-pr:
+    needs: [run-check]
+    if: always() && (needs.run-check.result == 'failure')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment on PR with error message
+        uses: actions/github-script@v7
+        env:
+          CHECK_RESULT: ${{ needs.run-check.result }}
+        with:
+          github-token: ${{ secrets.READ_ORG_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${context.runId}`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## ❌ Repo Setup Check Failed\n\nOne or more repo setup checks failed. [View the failed run](${runUrl})\n\n### What to do:\n1. Fix the issues reported in the failed run\n2. Open a new pull request when ready\n\nThis PR has been automatically closed.`
+            });
+
+      - name: Close PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.READ_ORG_TOKEN }}
+          script: |
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              state: 'closed'
+            });

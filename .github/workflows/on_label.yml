@@ -1,0 +1,248 @@
+name: Run tester when labeled
+
+on:
+  workflow_call:
+    inputs:
+      course_id:
+        required: true
+        type: string
+      available_assignments:
+        required: true
+        type: string
+      kmom_paths:
+        required: true
+        type: string
+
+jobs:
+  check-label-and-auth:
+    runs-on: ubuntu-latest
+    outputs:
+      is_allowed_label: ${{ steps.check-label.outputs.is_allowed }}
+      is_teacher: ${{ steps.check-team.outputs.is_teacher }}
+      label_name: ${{ steps.check-label.outputs.label_name }}
+    steps:
+      - name: Check if label is in allowed list
+        id: check-label
+        run: |
+          label="${{ github.event.label.name }}"
+          # List of labels that students are allowed to set
+          allowed_labels=("Run tests")
+          
+          echo "label_name=$label" >> "$GITHUB_OUTPUT"
+          
+          is_allowed=false
+          for allowed in "${allowed_labels[@]}"; do
+            if [[ "$label" == "$allowed" ]]; then
+              is_allowed=true
+              break
+            fi
+          done
+          
+          echo "is_allowed=$is_allowed" >> "$GITHUB_OUTPUT"
+          echo "Label '$label' allowed for students: $is_allowed"
+
+      - name: Check if user is in teacher team
+        id: check-team
+        if: steps.check-label.outputs.is_allowed == 'false'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.READ_ORG_TOKEN }}
+        run: |
+          user="${{ github.event.sender.login }}"
+          echo "Checking if $user is in teacher team..."
+          
+          status=$(gh api orgs/bth-python/teams/teacher/memberships/$user --jq '.state' 2>/dev/null || echo "not_found")
+          
+          if [[ "$status" == "active" ]]; then
+            echo "is_teacher=true" >> "$GITHUB_OUTPUT"
+            echo "✅ User $user is a teacher"
+          else
+            echo "is_teacher=false" >> "$GITHUB_OUTPUT"
+            echo "❌ User $user is not a teacher"
+          fi
+
+
+
+  run-tester:
+    needs: check-label-and-auth
+    if: needs.check-label-and-auth.outputs.is_allowed_label == 'true' && needs.check-label-and-auth.outputs.label_name == 'Run tests'
+    uses: bth-python/utils/.github/workflows/tester.yml@main
+    with:
+      kmom_paths: ${{ inputs.kmom_paths }}
+    secrets: inherit
+
+
+
+  update-tests-labels:
+    needs: [check-label-and-auth, run-tester]
+    if: always() && needs.check-label-and-auth.outputs.is_allowed_label == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set label and remove opposite label based on test result
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.READ_ORG_TOKEN }}
+          script: |
+            const passed = '${{ needs.run-tester.outputs.tests_passed }}' === 'true';
+            const addLabel = passed ? 'Tests passed (TP)' : 'Tests failed';
+            const removeLabel = passed ? 'Tests failed' : 'Tests passed (TP)';
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: [addLabel]
+            });
+
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                name: removeLabel
+              });
+            } catch (e) {
+              console.log(`Could not remove label "${removeLabel}": ${e.message}`);
+            }
+
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                name: "Run tests"
+              });
+            } catch (e) {
+              console.log(`Could not remove label "Run tests": ${e.message}`);
+            }
+
+
+
+  if-not-passed:
+    runs-on: ubuntu-latest
+    needs: check-label-and-auth
+    if: "(needs.check-label-and-auth.outputs.label_name == 'Grade: U' || needs.check-label-and-auth.outputs.label_name == 'Grade: Ux' || needs.check-label-and-auth.outputs.label_name == 'Grade: F') && needs.check-label-and-auth.outputs.is_teacher == 'true'"
+    steps:
+      - name: Remove label "Tests passed" if label is grade Ux
+        uses: actions-ecosystem/action-remove-labels@v1
+        with:
+          github_token: ${{ secrets.READ_ORG_TOKEN }}
+          labels: "Tests passed (TP)"
+        continue-on-error: true
+
+
+
+  submit-grade:
+    needs: check-label-and-auth
+    if: "(contains(needs.check-label-and-auth.outputs.label_name, 'Grade: ') || contains(needs.check-label-and-auth.outputs.label_name, 'Tests passed (TP)')) && needs.check-label-and-auth.outputs.is_teacher == 'true'"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get grade from label
+        id: find-grade
+        run: |
+          label="${{ needs.check-label-and-auth.outputs.label_name }}"
+          if [[ "$label" == Grade:\ * ]]; then
+            grade="${label#Grade: }"
+          elif [[ "$label" == "Tests passed (TP)" ]]; then
+            grade="TP"
+          else
+            echo "❌ Unknown label format: $label"
+            exit 1
+          fi
+          echo "grade=$grade" >> "$GITHUB_OUTPUT"
+          echo "Extracted grade: $grade"
+
+
+      - name: Get PR details
+        id: get-pr
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.READ_ORG_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            const baseRef = pr.base.ref;
+            
+            // Extract kmom from base branch (e.g., bth/submit/kmom03 -> kmom03)
+            const kmomMatch = baseRef.match(/bth\/submit\/(kmom\d+)/);
+            if (!kmomMatch) {
+              core.setFailed(`Invalid base branch format: ${baseRef}`);
+              return;
+            }
+            
+            const kmom = kmomMatch[1];
+            core.setOutput('kmom', kmom);
+            core.setOutput('pr_title', pr.title);
+            core.setOutput('pr_body', pr.body || '');
+            core.setOutput('pr_url', pr.html_url);
+
+      - name: Create submission body
+        id: create-body
+        run: |
+          cat << EOF >> $GITHUB_OUTPUT
+          myoutput<<EOM
+          Grade: ${{ steps.find-grade.outputs.grade }}
+          <br>
+          Set by: ${{ github.event.sender.login }}
+          <br><br>
+          Read comments on the PR for details.
+          <br><br>
+          PR URL: <a class='inline_disabled' href='${{ steps.get-pr.outputs.pr_url }}' target='_blank' rel='noopener noreferrer'>${{ steps.get-pr.outputs.pr_url }}</a>
+          EOM
+          EOF
+
+      - name: Get Student Canvas ID
+        id: get-canvas-id
+        uses: bth-python/utils/.github/actions/get-student-canvas-id@main
+        with:
+          course_id: ${{ inputs.course_id }}
+          canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
+          read_org_token: ${{ secrets.READ_ORG_TOKEN }}
+          github_login: ${{ github.event.pull_request.user.login }}
+
+      - name: Resolve assignment ID
+        uses: bth-python/utils/.github/actions/get-assignment-id@main
+        id: resolve
+        with:
+          available_assignments: ${{ inputs.available_assignments }}
+
+      - name: Submit grade to Canvas
+        uses: bth-python/utils/.github/actions/update-canvas@main
+        id: update_canvas
+        with:
+          subcommand: "grade_submission"
+          comment: "${{ steps.create-body.outputs.myoutput }}"
+          canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
+          student_id: ${{ steps.get-canvas-id.outputs.canvas_student_id }}
+          course_id: ${{ inputs.course_id }}
+          assignment_id: ${{ steps.resolve.outputs.assignment }}
+          grade: ${{ steps.find-grade.outputs.grade }}
+          read_org_token: "${{ secrets.READ_ORG_TOKEN }}"
+
+
+
+  remove-unauthorized-label:
+    needs: check-label-and-auth
+    if: needs.check-label-and-auth.outputs.is_allowed_label == 'false' && needs.check-label-and-auth.outputs.is_teacher != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove unauthorized label
+        uses: actions-ecosystem/action-remove-labels@v1
+        with:
+          github_token: ${{ secrets.READ_ORG_TOKEN }}
+          labels: ${{ needs.check-label-and-auth.outputs.label_name }}
+        continue-on-error: true
+
+      - name: Comment on PR about unauthorized label
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.READ_ORG_TOKEN }}
+          script: |
+            const labelName = '${{ needs.check-label-and-auth.outputs.label_name }}';
+            const user = '${{ github.event.sender.login }}';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `⚠️ The label "${labelName}" was removed because only teachers can set this label.\n\n@${user} - You can use the "Run tests" label to trigger test execution.`
+            });
+        continue-on-error: true

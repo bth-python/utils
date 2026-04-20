@@ -1,0 +1,116 @@
+on:
+  workflow_call:
+    inputs:
+      course_id:
+        required: true
+        type: string
+      available_assignments:
+        required: true
+        type: string
+
+jobs:
+  check-team:
+    runs-on: ubuntu-latest
+    outputs:
+      is_teacher: ${{ steps.check-team.outputs.is_teacher }}
+    steps:
+      - name: Check if user is in teacher team
+        id: check-team
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.READ_ORG_TOKEN }}
+        run: |
+          user="${{ github.event.sender.login }}"
+          echo "Checking if $user is in teacher team..."
+
+          status=$(gh api orgs/bth-python/teams/teacher/memberships/$user --jq '.state' 2>/dev/null || echo "not_found")
+
+          if [[ "$status" == "active" ]]; then
+            echo "is_teacher=true" >> "$GITHUB_OUTPUT"
+            echo "✅ User $user is a teacher"
+          else
+            echo "is_teacher=false" >> "$GITHUB_OUTPUT"
+            echo "❌ User $user is not a teacher"
+          fi
+
+  teacher-closed:
+    needs: check-team
+    if: needs.check-team.outputs.is_teacher == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create comment
+        id: created_comment
+        run: |
+          cat << EOF >> $GITHUB_OUTPUT
+          myoutput<<EOM
+          Teacher ${{ github.event.sender.login }} has closed this PR.
+          Go to the PR for details: ${{ github.event.pull_request.html_url }}
+          EOM
+          EOF
+
+      - name: Get Student Canvas ID
+        id: get-canvas-id
+        uses: bth-python/utils/.github/actions/get-student-canvas-id@main
+        with:
+          course_id: ${{ inputs.course_id }}
+          canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
+          read_org_token: ${{ secrets.READ_ORG_TOKEN }}
+          github_login: ${{ github.event.pull_request.user.login }}
+
+      - uses: bth-python/utils/.github/actions/get-assignment-id@main
+        id: resolve
+        with:
+          available_assignments: ${{ inputs.available_assignments }}
+
+      - name: Update Canvas with closed PR
+        uses: bth-python/utils/.github/actions/update-canvas@main
+        with:
+          subcommand: "grade_submission"
+          grade: "null"
+          comment: "${{ steps.created_comment.outputs.myoutput }}"
+          canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
+          course_id: ${{ inputs.course_id }}
+          assignment_id: ${{ steps.resolve.outputs.assignment }}
+          student_id: ${{ steps.get-canvas-id.outputs.canvas_student_id }}
+          read_org_token: "${{ secrets.READ_ORG_TOKEN }}"
+
+  student-closed:
+    needs: check-team
+    if: needs.check-team.outputs.is_teacher != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create comment
+        id: created_comment
+        run: |
+          cat << EOF >> $GITHUB_OUTPUT
+          myoutput<<EOM
+          ${{ github.event.sender.login }} closed this PR.
+          Create a new PR to submit the assignment.
+          EOM
+          EOF
+
+      - name: Get Student Canvas ID
+        id: get-canvas-id
+        uses: bth-python/utils/.github/actions/get-student-canvas-id@main
+        with:
+          course_id: ${{ inputs.course_id }}
+          canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
+          read_org_token: ${{ secrets.READ_ORG_TOKEN }}
+          github_login: ${{ github.event.pull_request.user.login }}
+
+      - uses: bth-python/utils/.github/actions/get-assignment-id@main
+        id: resolve
+        with:
+          available_assignments: ${{ inputs.available_assignments }}
+
+      - name: Update Canvas with closed PR
+        uses: bth-python/utils/.github/actions/update-canvas@main
+        with:
+          subcommand: "grade_submission"
+          grade: "Ux"
+          comment: "${{ steps.created_comment.outputs.myoutput }}"
+          canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
+          course_id: ${{ inputs.course_id }}
+          assignment_id: ${{ steps.resolve.outputs.assignment }}
+          student_id: ${{ steps.get-canvas-id.outputs.canvas_student_id }}
+          read_org_token: "${{ secrets.READ_ORG_TOKEN }}"

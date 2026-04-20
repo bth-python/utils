@@ -1,0 +1,111 @@
+name: "Get Student Canvas ID"
+description: >
+  Resolves a GitHub user's Canvas student ID by:
+  1. Querying the GitHub organisation's SAML identity provider via GraphQL to
+     obtain the user's institutional email (nameId).
+  2. Paginating through the Canvas course roster and matching on login_id.
+
+  Required token scopes for 'read_org_token':
+    - read:org
+    - admin:org  (needed to query SAML external identities)
+
+inputs:
+  course_id:
+    description: "Canvas course ID"
+    required: true
+  canvas_api_token:
+    description: "Canvas API Bearer token"
+    required: true
+  read_org_token:
+    description: >
+      GitHub token used to query SAML identities.
+      Requires 'read:org' and 'admin:org' (SAML) scopes on the organisation.
+    required: true
+  github_login:
+    description: "GitHub username to resolve to a Canvas student ID"
+    required: true
+
+outputs:
+  canvas_student_id:
+    description: "The Canvas student ID matching the given GitHub user"
+    value: ${{ steps.match-student.outputs.canvas_student_id }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Debug
+      shell: bash
+      run: |
+        echo "github_login:    ${{ inputs.github_login }}"
+        echo "course_id:       ${{ inputs.course_id }}"
+        echo "organisation:    ${{ github.repository_owner }}"
+
+    - name: Get email via SAML
+      shell: bash
+      run: |
+        response=$(curl --silent --fail-with-body \
+          --request POST \
+          --url https://api.github.com/graphql \
+          --header "Authorization: bearer ${{ inputs.read_org_token }}" \
+          --header "Content-Type: application/json" \
+          --data "$(jq -n \
+            --arg org "${{ github.repository_owner }}" \
+            --arg login "${{ inputs.github_login }}" \
+            '{query: "query { organization(login: \"\($org)\") { samlIdentityProvider { externalIdentities(first: 100, login: \"\($login)\") { edges { node { user { login } samlIdentity { nameId } } } } } } }"}'
+          )")
+
+        email=$(echo "$response" \
+          | jq -r '.data.organization.samlIdentityProvider.externalIdentities.edges[0]?.node.samlIdentity.nameId // empty' \
+          | tr '[:upper:]' '[:lower:]')
+
+        if [[ -z "$email" ]]; then
+          echo "::error::No SAML identity found for user '${{ inputs.github_login }}'. They may not have linked their GitHub account to BTH SSO."
+          exit 1
+        fi
+
+        echo "Resolved email: $email"
+        echo "STUDENT_EMAIL=$email" >> "$GITHUB_ENV"
+
+    - name: Fetch all Canvas students and match
+      id: match-student
+      shell: bash
+      run: |
+        next_url="https://bth.instructure.com/api/v1/courses/${{ inputs.course_id }}/users?enrollment_type[]=student&per_page=100&page=1"
+        all_users="[]"
+
+        while [[ -n "$next_url" ]]; do
+          echo "Fetching: $next_url"
+
+          # Fetch response with headers (-i) separated from body
+          raw=$(curl --silent --fail-with-body -i \
+            --header "Authorization: Bearer ${{ inputs.canvas_api_token }}" \
+            "$next_url")
+
+          # Split headers and body on the blank line separating them
+          headers=$(echo "$raw" | awk 'BEGIN{RS="\r\n\r\n"; ORS=""} NR==1{print}')
+          body=$(echo "$raw" | awk 'BEGIN{RS="\r\n\r\n"} NR==2{print}')
+
+          # Accumulate users
+          all_users=$(echo "$all_users" "$body" | jq -s '[.[0], .[1]] | add')
+
+          # Parse Link header for rel="next"
+          next_url=$(echo "$headers" \
+            | grep -i '^link:' \
+            | grep -oP '(?<=<)[^>]+(?=>; rel="next")' \
+            || true)
+        done
+
+        total=$(echo "$all_users" | jq 'length')
+        echo "Total students fetched: $total"
+
+        canvas_id=$(echo "$all_users" | jq -r \
+          --arg email "$STUDENT_EMAIL" \
+          '.[] | select((.login_id // "" | ascii_downcase) == $email) | .id')
+
+        if [[ -z "$canvas_id" ]]; then
+          echo "::error::No Canvas student found with email '$STUDENT_EMAIL' in course ${{ inputs.course_id }}."
+          exit 1
+        fi
+
+        echo "Resolved Canvas student ID: $canvas_id"
+        echo "canvas_student_id=$canvas_id" >> "$GITHUB_OUTPUT"
