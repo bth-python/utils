@@ -57,7 +57,7 @@ jobs:
         uses: bth-python/utils/.github/actions/setup-python@main
 
       - name: "Validate code"
-        run: uv run ruff check $(echo "${{ matrix.folder }}" | sed 's/tests/src/')
+        run: uv run ruff check --ignore-noqa $(echo "${{ matrix.folder }}" | sed 's/tests/src/')
 
       - name: Run kmom test in ${{ matrix.folder }}
         if: always()
@@ -115,7 +115,7 @@ jobs:
               for (const step of (job.steps || [])) {
                 if (step.name === 'Validate code') {
                   const e = step.conclusion === 'success' ? '✅' : '❌';
-                  lines.push(`  - ${e} \`uv run ruff check ${folder.replace('tests', 'src')}\``);
+                  lines.push(`  - ${e} \`uv run ruff check --ignore-noqa ${folder.replace('tests', 'src')}\``);
                 } else if (step.name && step.name.startsWith('Run kmom test')) {
                   const e = step.conclusion === 'success' ? '✅' : '❌';
                   lines.push(`  - ${e} \`uv run tester -f ${folder}\``);
