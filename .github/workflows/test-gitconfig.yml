@@ -35,7 +35,18 @@ jobs:
           EOM
           EOF
 
-      - uses: bth-python/utils/.github/actions/get-assignment-id@main
+      - name: Get Student Canvas ID
+        id: get-canvas-student-id
+        uses: bth-python/utils/.github/actions/get-student-canvas-id@main
+        with:
+          course_id: ${{ inputs.course_id }}
+          canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
+          read_org_token: ${{ secrets.READ_ORG_TOKEN }}
+          github_login: ${{ github.event.pull_request.user.login }}
+
+      - name: Get Canvas assignment ID
+        id: get-canvas-assignment-id
+        uses: bth-python/utils/.github/actions/get-assignment-id@main
         id: resolve
         with:
           available_assignments: ${{ inputs.available_assignments }}
