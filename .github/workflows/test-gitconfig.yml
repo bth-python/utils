@@ -47,7 +47,6 @@ jobs:
       - name: Get Canvas assignment ID
         id: get-canvas-assignment-id
         uses: bth-python/utils/.github/actions/get-assignment-id@main
-        id: resolve
         with:
           available_assignments: ${{ inputs.available_assignments }}
 
