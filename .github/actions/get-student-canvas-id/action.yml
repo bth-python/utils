@@ -78,6 +78,7 @@ runs:
           echo "Fetching: $next_url"
 
           # Fetch response with headers (-i) separated from body
+          echo "RAW:"
           raw=$(curl --silent -i \
             --header "Authorization: Bearer ${{ inputs.canvas_api_token }}" \
             "$next_url")
