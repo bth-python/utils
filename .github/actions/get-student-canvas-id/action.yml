@@ -77,6 +77,13 @@ runs:
         while true; do
           echo "Fetching: $next_url"
 
+          status=$(curl -s -o body.txt -w "%{http_code}" \
+            --header "Authorization: Bearer ${{ inputs.canvas_api_token }}" \
+            "$next_url")
+
+          echo "HTTP status: $status"
+          cat body.txt
+
           # Fetch response with headers (-i) separated from body
           echo "RAW:"
           raw=$(curl --silent -i \
