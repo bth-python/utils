@@ -81,7 +81,7 @@ runs:
           raw=$(curl --silent --fail-with-body -i \
             --header "Authorization: Bearer ${{ inputs.canvas_api_token }}" \
             "$next_url")
-          echo "$raw" | jq length
+          echo "First 100 chars: ${raw:0:100}"
 
           # Split headers and body on the blank line separating them
           headers=$(echo "$raw" | awk 'BEGIN{RS="\r\n\r\n"; ORS=""} NR==1{print}')
@@ -99,8 +99,6 @@ runs:
           count=$(echo "$raw" | jq length)
 
           [ "$count" -eq 0 ] && break
-
-          echo "$result"
 
           page=$((page + 1))
           next_url="https://bth.instructure.com/api/v1/courses/${{ inputs.course_id }}/users?enrollment_type[]=student&per_page=100&page=$page"
