@@ -76,8 +76,9 @@ runs:
 
         while true; do
           echo "Fetching: $next_url"
+          echo "Token length: ${{ inputs.canvas_api_token }}"
 
-          status=$(curl -s -o body.txt -w "%{http_code}" \
+          status=$(curl -v -o body.txt -w "%{http_code}" \
             --header "Authorization: Bearer ${{ inputs.canvas_api_token }}" \
             "$next_url")
 
