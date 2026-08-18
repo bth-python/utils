@@ -76,9 +76,8 @@ runs:
 
         while true; do
           echo "Fetching: $next_url"
-          printf 'URL=[%s]\n' "$next_url"
-          printf '%q\n' "$next_url"
 
+          echo "curl to users self"
           response=$(curl --silent --fail-with-body -i \
             --header "Authorization: Bearer ${{ inputs.canvas_api_token }}" \
             "https://bth.instructure.com/api/v1/users/self")
