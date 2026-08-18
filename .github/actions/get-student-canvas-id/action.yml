@@ -78,7 +78,7 @@ runs:
           echo "Fetching: $next_url"
 
           echo "curl to users self"
-          response=$(curl -i \
+          response=$(curl -i -v -sS \
             --header "Authorization: Bearer ${{ inputs.canvas_api_token }}" \
             "https://bth.instructure.com/api/v1/users/self")
 
