@@ -74,7 +74,7 @@ runs:
         next_url="https://bth.instructure.com/api/v1/courses/${{ inputs.course_id }}/users?enrollment_type[]=student&per_page=100&page=$page"
         all_users="[]"
 
-        while [[ -n "$next_url" ]]; do
+        while true; do
           echo "Fetching: $next_url"
 
           # Fetch response with headers (-i) separated from body
@@ -94,6 +94,12 @@ runs:
             | grep -i '^link:' \
             | grep -oP '(?<=<)[^>]+(?=>; rel="next")' \
             || true)
+
+          count=$(echo "$result" | jq length)
+
+          [ "$count" -eq 0 ] && break
+
+          echo "$result"
 
           page=$((page + 1))
           next_url="https://bth.instructure.com/api/v1/courses/${{ inputs.course_id }}/users?enrollment_type[]=student&per_page=100&page=$page"
