@@ -81,11 +81,13 @@ runs:
           raw=$(curl --silent -i \
             --header "Authorization: Bearer ${{ inputs.canvas_api_token }}" \
             "$next_url")
-          echo "First 100 chars: ${raw:0:100}"
+          echo "raw: $raw"
 
           # Split headers and body on the blank line separating them
           headers=$(echo "$raw" | awk 'BEGIN{RS="\r\n\r\n"; ORS=""} NR==1{print}')
           body=$(echo "$raw" | awk 'BEGIN{RS="\r\n\r\n"} NR==2{print}')
+          echo "BODY:"
+          echo "$body"
 
           # Accumulate users
           all_users=$(echo "$all_users" "$body" | jq -s '[.[0], .[1]] | add')
@@ -97,6 +99,8 @@ runs:
             || true)
 
           count=$(echo "$body" | jq length)
+          echo "count:"
+          echo "$count"
 
           [ "$count" -eq 0 ] && break
 
