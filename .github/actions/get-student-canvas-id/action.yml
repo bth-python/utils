@@ -69,6 +69,8 @@ runs:
     - name: Fetch all Canvas students and match
       id: match-student
       shell: bash
+      env:
+       CANVAS_API_TOKEN: ${{ inputs.canvas_api_token }}
       run: |
         page=1
         next_url="https://bth.instructure.com/api/v1/courses/${{ inputs.course_id }}/users?enrollment_type[]=student&per_page=100&page=$page"
@@ -79,7 +81,7 @@ runs:
 
           echo "curl to users self"
           response=$(curl -i -v -sS \
-            --header "Authorization: Bearer ${{ inputs.canvas_api_token }}" \
+            --header "Authorization: Bearer $CANVAS_API_TOKEN" \
             "https://bth.instructure.com/api/v1/users/self")
 
           echo "$response"
