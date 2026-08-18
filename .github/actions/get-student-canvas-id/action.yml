@@ -70,7 +70,8 @@ runs:
       id: match-student
       shell: bash
       run: |
-        next_url="https://bth.instructure.com/api/v1/courses/${{ inputs.course_id }}/users?enrollment_type[]=student&per_page=100&page=1"
+        page=1
+        next_url="https://bth.instructure.com/api/v1/courses/${{ inputs.course_id }}/users?enrollment_type[]=student&per_page=100&page=$page"
         all_users="[]"
 
         while [[ -n "$next_url" ]]; do
@@ -93,6 +94,9 @@ runs:
             | grep -i '^link:' \
             | grep -oP '(?<=<)[^>]+(?=>; rel="next")' \
             || true)
+
+          page=$((page + 1))
+          next_url="https://bth.instructure.com/api/v1/courses/${{ inputs.course_id }}/users?enrollment_type[]=student&per_page=100&page=$page"
         done
 
         total=$(echo "$all_users" | jq 'length')
