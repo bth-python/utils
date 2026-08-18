@@ -76,16 +76,14 @@ runs:
 
         while true; do
           echo "Fetching: $next_url"
-          echo "Token length: ${{ inputs.canvas_api_token }}"
           printf 'URL=[%s]\n' "$next_url"
-
+          printf '%q\n' "$next_url"
 
           status=$(curl -v \
             --header "Authorization: Bearer ${{ inputs.canvas_api_token }}" \
             "https://bth.instructure.com/api/v1/users/self")
 
           echo "HTTP status: $status"
-          cat body.txt
 
           # Fetch response with headers (-i) separated from body
           echo "RAW:"
