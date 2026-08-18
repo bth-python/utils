@@ -81,8 +81,7 @@ runs:
 
           echo "curl to users self"
           response=$(curl -i -v -sS \
-            --header "Authorization: Bearer $CANVAS_API_TOKEN" \
-            "https://bth.instructure.com/api/v1/users/self")
+            --header "Authorization: Bearer $CANVAS_API_TOKEN" "https://bth.instructure.com/api/v1/users")
 
           echo "$response"
 
