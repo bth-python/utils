@@ -79,11 +79,11 @@ runs:
           printf 'URL=[%s]\n' "$next_url"
           printf '%q\n' "$next_url"
 
-          status=$(curl -v \
+          response=$(curl -s \
             --header "Authorization: Bearer ${{ inputs.canvas_api_token }}" \
             "https://bth.instructure.com/api/v1/users/self")
 
-          echo "HTTP status: $status"
+          echo "$response"
 
           # Fetch response with headers (-i) separated from body
           echo "RAW:"
