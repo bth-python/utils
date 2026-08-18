@@ -19,9 +19,9 @@ jobs:
         with:
           version: 3.x
 
-      - name: Run check for files Task
+      - name: Run check repo
         id: check_files
-        run: task check-have-files
+        run: task check-repo-setup
 
       - name: Create comment
         id: created_comment
@@ -29,7 +29,7 @@ jobs:
           cat << EOF >> $GITHUB_OUTPUT
           myoutput<<EOM
           Pull Request Action: ${{ github.event.action }}
-          Status: ${{ steps.check_files.outcome == 'success' && '✅ All files found' || '❌ Some files missing' }}
+          Status: ${{ steps.check_files.outcome == 'success' && '🎉 Repo setup looks correct' || '❌' }}
 
           PR URL: ${{ github.event.pull_request.html_url }}
           EOM
