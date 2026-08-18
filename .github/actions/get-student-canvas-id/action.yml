@@ -96,7 +96,7 @@ runs:
             | grep -oP '(?<=<)[^>]+(?=>; rel="next")' \
             || true)
 
-          count=$(echo "$raw | jq length)
+          count=$(echo "$raw" | jq length)
 
           [ "$count" -eq 0 ] && break
 
