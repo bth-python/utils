@@ -80,14 +80,14 @@ runs:
           echo "Fetching: $next_url"
 
           echo "curl to users self"
-          response=$(curl -s -S \
+          response=$(curl --http1.1 -s -S \
             --header "Authorization: Bearer $CANVAS_API_TOKEN" "https://bth.instructure.com/api/v1/users/self")
 
           echo "$response"
 
           # Fetch response with headers (-i) separated from body
           echo "RAW:"
-          raw=$(curl --silent -i \
+          raw=$(curl --silent --http1.1 -i \
             --header "Authorization: Bearer ${{ inputs.canvas_api_token }}" \
             "$next_url")
           echo "$raw"
