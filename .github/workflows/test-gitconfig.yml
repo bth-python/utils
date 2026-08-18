@@ -49,5 +49,3 @@ jobs:
           canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
           course_id: ${{inputs.course_id}}
           assignment_id: ${{ steps.resolve.outputs.assignment }}
-          student_id: ${{ inputs.student_id }}
-          read_org_token: "${{ secrets.READ_ORG_TOKEN }}"
