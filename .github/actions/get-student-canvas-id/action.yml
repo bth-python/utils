@@ -79,7 +79,7 @@ runs:
 
           # Fetch response with headers (-i) separated from body
           raw=$(curl --silent --fail-with-body -i \
-            --header "Authorization: Bearer ${{ inputs.canvas_api_token }}" \
+            --header "Authorization: Bearer ${{ inputs.read_org_token }}" \
             "$next_url")
           echo "First 100 chars: ${raw:0:100}"
 
