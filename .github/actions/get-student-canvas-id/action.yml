@@ -81,6 +81,7 @@ runs:
           raw=$(curl --silent --fail-with-body -i \
             --header "Authorization: Bearer ${{ inputs.canvas_api_token }}" \
             "$next_url")
+          echo "$raw" | jq length
 
           # Split headers and body on the blank line separating them
           headers=$(echo "$raw" | awk 'BEGIN{RS="\r\n\r\n"; ORS=""} NR==1{print}')
@@ -95,7 +96,7 @@ runs:
             | grep -oP '(?<=<)[^>]+(?=>; rel="next")' \
             || true)
 
-          count=$(echo "$result" | jq length)
+          count=$(echo "$raw | jq length)
 
           [ "$count" -eq 0 ] && break
 
