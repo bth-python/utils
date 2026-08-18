@@ -80,7 +80,7 @@ runs:
           echo "Fetching: $next_url"
 
           echo "curl to users self"
-          response=$(curl --http1.1 -s -S \
+          response=$(curl -s -S \
             --header "Authorization: Bearer $CANVAS_API_TOKEN" "https://bth.instructure.com/api/v1/users/self")
 
           echo "$response"
