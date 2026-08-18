@@ -79,7 +79,7 @@ runs:
 
           # Fetch response with headers (-i) separated from body
           raw=$(curl --silent -i \
-            --header "Authorization: Bearer ${{ inputs.read_org_token }}" \
+            --header "Authorization: Bearer ${{ inputs.canvas_api_token }}" \
             "$next_url")
           echo "First 100 chars: ${raw:0:100}"
 
@@ -96,7 +96,7 @@ runs:
             | grep -oP '(?<=<)[^>]+(?=>; rel="next")' \
             || true)
 
-          count=$(echo "$raw" | jq length)
+          count=$(echo "$body" | jq length)
 
           [ "$count" -eq 0 ] && break
 
