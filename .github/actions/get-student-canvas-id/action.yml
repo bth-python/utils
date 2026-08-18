@@ -78,14 +78,10 @@ runs:
           echo "Fetching: $next_url"
 
           echo "curl to users self"
-          response=$(curl --silent --fail-with-body -i \
+          response=$(curl -i \
             --header "Authorization: Bearer ${{ inputs.canvas_api_token }}" \
             "https://bth.instructure.com/api/v1/users/self")
 
-          status=$?
-
-          echo "Exit code: $status"
-          echo "Response:"
           echo "$response"
 
           # Fetch response with headers (-i) separated from body
