@@ -1,0 +1,322 @@
+name: Check requirements for opening PR
+
+on:
+  workflow_call:
+    inputs:
+      course_id:
+        required: true
+        type: string
+      available_assignments:
+        required: true
+        type: string
+      kmom_paths:
+        required: true
+        type: string
+      tags:
+        required: true
+        type: string
+
+jobs:
+  validate-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      workflow_passed: ${{ steps.check.outputs.workflow_passed }}
+      error_message: ${{ steps.check.outputs.error_message }}
+      kmom: ${{ steps.check.outputs.kmom }}
+      tag_summary: ${{ steps.check.outputs.tag_summary }}
+    steps:
+      - name: Check latest tag workflow status
+        id: check
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.READ_ORG_TOKEN }}
+          script: |
+            const baseRef = '${{ github.base_ref }}';
+            console.log(`Base ref: ${baseRef}`);
+            
+            // Extract kmom from branch (e.g., bth/submit/kmom03 -> kmom03)
+            const kmomMatch = baseRef.match(/bth\/submit\/(kmom\d+)/);
+            if (!kmomMatch) {
+              core.setOutput('workflow_passed', 'false');
+              core.setOutput('error_message', `Invalid branch format: ${baseRef}. Expected bth/submit/kmomXX`);
+              core.setFailed(`Invalid branch format: ${baseRef}. Expected bth/submit/kmomXX`);
+              return;
+            }
+            
+            const kmom = kmomMatch[1];
+            console.log(`Extracted kmom: ${kmom}`);
+            core.setOutput('kmom', kmom);
+            
+            // Look up allowed tag prefixes from TAGS config
+            const tagsConfig = JSON.parse('${{ inputs.tags }}');
+            const allowedPrefixes = tagsConfig[kmom];
+            if (!allowedPrefixes || allowedPrefixes.length === 0) {
+              core.setOutput('workflow_passed', 'false');
+              core.setOutput('error_message', `No TAGS config found for ${kmom} — check org action variables.`);
+              core.setFailed(`No TAGS config found for ${kmom} — check org action variables.`);
+              return;
+            }
+            console.log(`Allowed tag prefixes for ${kmom}: ${allowedPrefixes.join(', ')}`);
+
+            // Helper: resolve a tag ref to its commit SHA (handles annotated tags)
+            async function resolveCommitSha(tagName) {
+              const tagObject = await github.rest.git.getRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `tags/${tagName}`
+              });
+              let sha = tagObject.data.object.sha;
+              if (tagObject.data.object.type === 'tag') {
+                const annotatedTag = await github.rest.git.getTag({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  tag_sha: sha
+                });
+                sha = annotatedTag.data.object.sha;
+              }
+              return sha;
+            }
+
+            // For each prefix (e.g. v01, v02, v03): find the latest tag and check it
+            // has a passing workflow. Every prefix must pass.
+            const prefixResults = [];
+            for (const prefix of allowedPrefixes) {
+              const response = await github.rest.git.listMatchingRefs({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `tags/${prefix}`
+              }).catch(() => ({ data: [] }));
+
+              const prefixTags = response.data
+                .map(tag => {
+                  const tagName = tag.ref.replace('refs/tags/', '');
+                  const m = tagName.match(/^v(\d+)\.(\d+)(?:\.(\d+))?$/);
+                  if (!m) return null;
+                  return {
+                    name: tagName,
+                    major: parseInt(m[1], 10),
+                    minor: parseInt(m[2], 10),
+                    patch: m[3] ? parseInt(m[3], 10) : 0
+                  };
+                })
+                .filter(t => t !== null)
+                .sort((a, b) => {
+                  if (a.major !== b.major) return b.major - a.major;
+                  if (a.minor !== b.minor) return b.minor - a.minor;
+                  return b.patch - a.patch;
+                });
+
+              if (prefixTags.length === 0) {
+                console.log(`❌ No tag found with prefix ${prefix}`);
+                prefixResults.push({ prefix, passed: false, message: `No tag found with prefix ${prefix}. Push a ${prefix}.x tag with passing tests.` });
+                continue;
+              }
+
+              const latestTag = prefixTags[0];
+              console.log(`Latest tag for ${prefix}: ${latestTag.name}`);
+
+              const commitSha = await resolveCommitSha(latestTag.name);
+              const workflowRuns = await github.rest.actions.listWorkflowRunsForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                event: 'push',
+                head_sha: commitSha,
+                status: 'completed',
+                per_page: 100
+              });
+
+              const successfulRun = workflowRuns.data.workflow_runs.find(run => run.conclusion === 'success');
+              if (successfulRun) {
+                console.log(`✅ ${latestTag.name} has a passing workflow: ${successfulRun.html_url}`);
+                prefixResults.push({ prefix, tag: latestTag.name, passed: true });
+              } else {
+                console.log(`❌ ${latestTag.name} has no passing workflow (Number of found ${latestTag.name} tags: ${workflowRuns.data.workflow_runs.length}. If it is zero that means you need to create a tag for that kmom. If it is above zero, you need to create a new tag with passing tests for that kmom).`);
+                prefixResults.push({ prefix, tag: latestTag.name, passed: false, message: `Tag ${latestTag.name} has no passing workflow. Fix the errors and push a new ${prefix}.x tag with passing tests.` });
+              }
+            }
+
+            const failed = prefixResults.filter(r => !r.passed);
+
+            // Build a human-readable summary of all prefix results
+            const summaryLines = prefixResults.map(r => {
+              if (r.passed) return `- ✅ **${r.prefix}**: found \`${r.tag}\` — passing workflow`;
+              if (r.tag)    return `- ❌ **${r.prefix}**: found \`${r.tag}\` — no passing workflow`;
+              return              `- ❌ **${r.prefix}**: no tag found`;
+            });
+            const tagSummary = `**Tag check:**\n${summaryLines.join('\n')}`;
+            core.setOutput('tag_summary', tagSummary);
+
+            if (failed.length === 0) {
+              core.setOutput('workflow_passed', 'true');
+              core.setOutput('error_message', '');
+            } else {
+              const failMessages = failed.map(r => `- ${r.message}`).join('\n');
+              core.setOutput('workflow_passed', 'false');
+              core.setOutput('error_message', `${kmom} requirements not met:\n${failMessages}`);
+              core.setFailed(`${kmom} requirements not met. See details above.`);
+            }
+
+  run-tester:
+    needs: validate-tag
+    if: needs.validate-tag.outputs.workflow_passed == 'true'
+    uses: bth-python/utils/.github/workflows/tester.yml@main
+    with:
+      kmom_paths: ${{ inputs.kmom_paths }}
+    secrets: inherit
+
+  submit-canvas:
+    needs: [validate-tag, run-tester]
+    if: needs.validate-tag.outputs.workflow_passed == 'true' && needs.run-tester.outputs.tests_passed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add "Tests passed" label
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          github_token: ${{ secrets.read_org_token }}
+          labels: "Tests passed (TP)"
+
+      - name: Remove "Tests passed" label
+        uses: actions-ecosystem/action-remove-labels@v1
+        continue-on-error: true
+        with:
+          github_token: ${{ secrets.read_org_token }}
+          labels: "Tests failed"
+
+      - id: created_body
+        run: |
+          cat << EOF >> $GITHUB_OUTPUT
+          myoutput<<EOM
+          Pull Request action: ${{ github.event.action }}<br>
+          <br>
+          <h2>${{github.event.pull_request.title}}<br></h2>
+          ${{github.event.pull_request.body}}<br>
+          <br>
+          PR URL: <a class='inline_disabled' href='${{ github.event.pull_request.html_url }}' target='_blank' rel='noopener noreferrer'>${{ github.event.pull_request.html_url }}</a>
+          EOM
+          EOF
+
+      - name: Get Student Canvas ID
+        id: get-canvas-id
+        uses: bth-python/utils/.github/actions/get-student-canvas-id@main
+        with:
+          course_id: ${{ inputs.course_id }}
+          canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
+          read_org_token: ${{ secrets.READ_ORG_TOKEN }}
+          github_login: ${{ github.event.pull_request.user.login }}
+
+      - uses: bth-python/utils/.github/actions/get-assignment-id@main
+        id: resolve
+        with:
+          available_assignments: ${{ inputs.available_assignments }}
+
+      - name: Submit Assignment to Canvas
+        uses: bth-python/utils/.github/actions/update-canvas@main
+        id: update_canvas
+        with:
+          subcommand: "submit_assignment"
+          comment: "${{ steps.created_body.outputs.myoutput }}"
+          canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
+          student_id: ${{ steps.get-canvas-id.outputs.canvas_student_id }}
+          course_id: ${{inputs.course_id}}
+          assignment_id: ${{ steps.resolve.outputs.assignment }}
+          read_org_token: "${{ secrets.READ_ORG_TOKEN }}"
+
+      - name: Set grade to TP in Canvas
+        uses: bth-python/utils/.github/actions/update-canvas@main
+        with:
+          subcommand: "grade_submission"
+          comment: "Automated grading: All tests passed. Ready for manual grading."
+          canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
+          student_id: ${{ steps.get-canvas-id.outputs.canvas_student_id }}
+          grade: "TP"
+          course_id: ${{inputs.course_id}}
+          assignment_id: ${{ steps.resolve.outputs.assignment }}
+          read_org_token: "${{ secrets.READ_ORG_TOKEN }}"
+      
+      - name: Put comment in PR about submission
+        uses: actions/github-script@v7
+        env:
+          TAG_SUMMARY: ${{ needs.validate-tag.outputs.tag_summary }}
+          TEST_SUMMARY: ${{ needs.run-tester.outputs.test_summary }}
+        with:
+          github-token: ${{ secrets.READ_ORG_TOKEN }}
+          script: |
+            const commentBody = `✅ Assignment submitted to Canvas. PR is ready for grading.\n\n${process.env.TAG_SUMMARY}\n\n${process.env.TEST_SUMMARY}`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: commentBody
+            });
+
+  handle-canvas-failure:
+    needs: [submit-canvas]
+    if: always() && needs.submit-canvas.result == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment on PR about Canvas submission failure
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.READ_ORG_TOKEN }}
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## ❌ Canvas Submission Failed\n\nThe assignment could not be submitted to Canvas. This is likely a system issue.\n\n### What to do: Go through the instructions of setting up the repo and make sure you have done all steps correctly. If you are sure everything is correct, then:\
+                \n1. Contact your instructor or course administrator\n2. Provide them with this PR link for help\n\nThis PR has been automatically closed.\n\n### You will need to open a new PR when you have resolved the issue.`
+            });
+
+      - name: Close PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.READ_ORG_TOKEN }}
+          script: |
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              state: 'closed'
+            });
+
+  close-pr:
+    needs: [validate-tag, run-tester]
+    if: always() && (needs.validate-tag.outputs.workflow_passed != 'true' || needs.run-tester.outputs.tests_passed != 'true')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment on PR with error message
+        uses: actions/github-script@v7
+        env:
+          VALIDATE_PASSED: ${{ needs.validate-tag.outputs.workflow_passed }}
+          VALIDATE_ERROR: ${{ needs.validate-tag.outputs.error_message }}
+          KMOM: ${{ needs.validate-tag.outputs.kmom }}
+          TAG_SUMMARY: ${{ needs.validate-tag.outputs.tag_summary }}
+          TEST_SUMMARY: ${{ needs.run-tester.outputs.test_summary }}
+        with:
+          github-token: ${{ secrets.READ_ORG_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${context.runId}`;
+            const errorMessage = process.env.VALIDATE_PASSED === 'true'
+              ? `Tests failed for ${process.env.KMOM}. [View the failed run](${runUrl})\nFix the errors, push a new tag, and open a new PR.`
+              : process.env.VALIDATE_ERROR;
+            const tagSummary = process.env.TAG_SUMMARY ? `\n\n${process.env.TAG_SUMMARY}` : '';
+            const testSummary = process.env.TEST_SUMMARY ? `\n\n${process.env.TEST_SUMMARY}` : '';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## ❌ Submission Requirements Not Met\n\n${errorMessage}${tagSummary}${testSummary}\n\n### What to do:\n1. Fix any errors in your code\n2. Ensure all tests pass locally\n3. Push a new tag with working code\n4. Open a new pull request when ready\n\nThis PR has been automatically closed.`
+            });
+
+      - name: Close PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.READ_ORG_TOKEN }}
+          script: |
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              state: 'closed'
+            });

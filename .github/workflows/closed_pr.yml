@@ -7,52 +7,55 @@ on:
       available_assignments:
         required: true
         type: string
-      student_id:
-        required: true
-        type: string
 
 jobs:
+  check-team:
+    runs-on: ubuntu-latest
+    outputs:
+      is_teacher: ${{ steps.check-team.outputs.is_teacher }}
+    steps:
+      - name: Check if user is in teacher team
+        id: check-team
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.READ_ORG_TOKEN }}
+        run: |
+          user="${{ github.event.sender.login }}"
+          echo "Checking if $user is in teacher team..."
 
-  report-closed-pr-to-canvas:
+          status=$(gh api orgs/bth-algo/teams/teacher/memberships/$user --jq '.state' 2>/dev/null || echo "not_found")
+
+          if [[ "$status" == "active" ]]; then
+            echo "is_teacher=true" >> "$GITHUB_OUTPUT"
+            echo "✅ User $user is a teacher"
+          else
+            echo "is_teacher=false" >> "$GITHUB_OUTPUT"
+            echo "❌ User $user is not a teacher"
+          fi
+
+  teacher-closed:
+    needs: check-team
+    if: needs.check-team.outputs.is_teacher == 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Get last PR comment
-        id: last_comment
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.READ_ORG_TOKEN }}
-          script: |
-            const { owner, repo } = context.repo;
-            const pr_number = context.payload.pull_request.number;
-            const comments = await github.rest.issues.listComments({
-              owner,
-              repo,
-              issue_number: pr_number,
-              per_page: 1,
-              sort: 'created',
-              direction: 'desc'
-            });
-            if (comments.data.length > 0) {
-              core.setOutput('last_comment_body', comments.data[0].body || '');
-              core.setOutput('last_comment_user', comments.data[0].user.login);
-              core.setOutput('last_comment_url', comments.data[0].html_url);
-            } else {
-              core.setOutput('last_comment_body', '');
-            }
-
       - name: Create comment
         id: created_comment
         run: |
           cat << EOF >> $GITHUB_OUTPUT
           myoutput<<EOM
-          Pull Request Action: ${{ github.event.action }}
-          Status: Pull request was manually closed.
-          Comment: ${{ steps.last_comment.outputs.last_comment_body }}
-
-          User who closed: ${{ github.event.sender.login }}
-          PR URL: ${{ github.event.pull_request.html_url }}
+          Teacher ${{ github.event.sender.login }} has closed this PR.
+          Go to the PR for details: ${{ github.event.pull_request.html_url }}
           EOM
           EOF
+
+      - name: Get Student Canvas ID
+        id: get-canvas-id
+        uses: bth-python/utils/.github/actions/get-student-canvas-id@main
+        with:
+          course_id: ${{ inputs.course_id }}
+          canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
+          read_org_token: ${{ secrets.READ_ORG_TOKEN }}
+          github_login: ${{ github.event.pull_request.user.login }}
 
       - uses: bth-python/utils/.github/actions/get-assignment-id@main
         id: resolve
@@ -63,10 +66,51 @@ jobs:
         uses: bth-python/utils/.github/actions/update-canvas@main
         with:
           subcommand: "grade_submission"
-          grade: "TUx"
+          grade: "null"
           comment: "${{ steps.created_comment.outputs.myoutput }}"
           canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
-          course_id: ${{inputs.course_id}}
+          course_id: ${{ inputs.course_id }}
           assignment_id: ${{ steps.resolve.outputs.assignment }}
-          student_id: ${{ inputs.student_id }}
+          student_id: ${{ steps.get-canvas-id.outputs.canvas_student_id }}
+          read_org_token: "${{ secrets.READ_ORG_TOKEN }}"
+
+  student-closed:
+    needs: check-team
+    if: needs.check-team.outputs.is_teacher != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create comment
+        id: created_comment
+        run: |
+          cat << EOF >> $GITHUB_OUTPUT
+          myoutput<<EOM
+          ${{ github.event.sender.login }} closed this PR.
+          Create a new PR to submit the assignment.
+          EOM
+          EOF
+
+      - name: Get Student Canvas ID
+        id: get-canvas-id
+        uses: bth-python/utils/.github/actions/get-student-canvas-id@main
+        with:
+          course_id: ${{ inputs.course_id }}
+          canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
+          read_org_token: ${{ secrets.READ_ORG_TOKEN }}
+          github_login: ${{ github.event.pull_request.user.login }}
+
+      - uses: bth-python/utils/.github/actions/get-assignment-id@main
+        id: resolve
+        with:
+          available_assignments: ${{ inputs.available_assignments }}
+
+      - name: Update Canvas with closed PR
+        uses: bth-python/utils/.github/actions/update-canvas@main
+        with:
+          subcommand: "grade_submission"
+          grade: "Ux"
+          comment: "${{ steps.created_comment.outputs.myoutput }}"
+          canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
+          course_id: ${{ inputs.course_id }}
+          assignment_id: ${{ steps.resolve.outputs.assignment }}
+          student_id: ${{ steps.get-canvas-id.outputs.canvas_student_id }}
           read_org_token: "${{ secrets.READ_ORG_TOKEN }}"

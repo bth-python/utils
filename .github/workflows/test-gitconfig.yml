@@ -31,6 +31,8 @@ jobs:
           Pull Request Action: ${{ github.event.action }}
           Status: ${{ steps.check_repo.outcome == 'success' && '🎉 Repo setup looks correct' || '❌' }}
 
+          ✅ Connection between GitHub and Canvas is working properly
+
           PR URL: ${{ github.event.pull_request.html_url }}
           EOM
           EOF

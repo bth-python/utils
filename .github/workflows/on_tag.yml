@@ -1,0 +1,15 @@
+name: Run on tag
+
+on:
+  workflow_call:
+    inputs:
+      kmom_paths:
+        required: true
+        type: string
+
+jobs:
+  on-tag:
+    uses: bth-python/utils/.github/workflows/tester.yml@main
+    with:
+      kmom_paths: ${{ inputs.kmom_paths }}
+    secrets: inherit
