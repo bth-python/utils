@@ -46,9 +46,8 @@ jobs:
           read_org_token: ${{ secrets.READ_ORG_TOKEN }}
           github_login: ${{ github.event.pull_request.user.login }}
 
-      - name: Get Canvas assignment ID
-        id: get-canvas-assignment-id
-        uses: bth-python/utils/.github/actions/get-assignment-id@main
+      - uses: bth-python/utils/.github/actions/get-assignment-id@main
+        id: resolve
         with:
           available_assignments: ${{ inputs.available_assignments }}
 
@@ -60,5 +59,5 @@ jobs:
           comment: "${{ steps.created_comment.outputs.myoutput }}"
           canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
           course_id: ${{inputs.course_id}}
-          assignment_id: ${{ steps.get-canvas-assignment-id.outputs.assignment }}
+          assignment_id: ${{ steps.resolve.outputs.assignment }}
           student_id: ${{ steps.get-canvas-student-id.outputs.canvas_student_id }}
