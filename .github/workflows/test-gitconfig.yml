@@ -59,4 +59,4 @@ jobs:
           canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
           course_id: ${{inputs.course_id}}
           assignment_id: ${{ steps.get-canvas-assignment-id.outputs.assignment }}
-          student_id: ${{ steps.get-canvas-student-id.outputs canvas_student_id }}
+          student_id: ${{ steps.get-canvas-student-id.outputs.canvas_student_id }}
