@@ -72,31 +72,20 @@ runs:
       env:
        CANVAS_API_TOKEN: ${{ inputs.canvas_api_token }}
       run: |
-        page=1
-        next_url="https://bth.instructure.com/api/v1/courses/${{ inputs.course_id }}/users?enrollment_type[]=student&per_page=100&page=$page"
+        next_url="https://bth.instructure.com/api/v1/courses/${{ inputs.course_id }}/users?enrollment_type[]=student&per_page=100&page=1"
         all_users="[]"
 
-        while true; do
+        while [[ -n "$next_url" ]]; do
           echo "Fetching: $next_url"
 
-          echo "curl to users self"
-          response=$(curl --http1.1 -s -S \
-            --header "Authorization: Bearer $CANVAS_API_TOKEN" "https://bth.instructure.com/api/v1/users/self")
-
-          echo "$response"
-
           # Fetch response with headers (-i) separated from body
-          echo "RAW:"
-          raw=$(curl --silent --http1.1 -i \
+          raw=$(curl --silent --fail-with-body -i \
             --header "Authorization: Bearer ${{ inputs.canvas_api_token }}" \
             "$next_url")
-          echo "$raw"
 
           # Split headers and body on the blank line separating them
           headers=$(echo "$raw" | awk 'BEGIN{RS="\r\n\r\n"; ORS=""} NR==1{print}')
           body=$(echo "$raw" | awk 'BEGIN{RS="\r\n\r\n"} NR==2{print}')
-          echo "BODY:"
-          echo "$body"
 
           # Accumulate users
           all_users=$(echo "$all_users" "$body" | jq -s '[.[0], .[1]] | add')
@@ -106,15 +95,6 @@ runs:
             | grep -i '^link:' \
             | grep -oP '(?<=<)[^>]+(?=>; rel="next")' \
             || true)
-
-          count=$(echo "$body" | jq length)
-          echo "count:"
-          echo "$count"
-
-          [ "$count" -eq 0 ] && break
-
-          page=$((page + 1))
-          next_url="https://bth.instructure.com/api/v1/courses/${{ inputs.course_id }}/users?enrollment_type[]=student&per_page=100&page=$page"
         done
 
         total=$(echo "$all_users" | jq 'length')

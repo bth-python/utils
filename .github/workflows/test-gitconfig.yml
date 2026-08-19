@@ -20,7 +20,7 @@ jobs:
           version: 3.x
 
       - name: Run check repo
-        id: check_files
+        id: check_repo
         run: task check-repo-setup
 
       - name: Create comment
@@ -29,7 +29,7 @@ jobs:
           cat << EOF >> $GITHUB_OUTPUT
           myoutput<<EOM
           Pull Request Action: ${{ github.event.action }}
-          Status: ${{ steps.check_files.outcome == 'success' && '🎉 Repo setup looks correct' || '❌' }}
+          Status: ${{ steps.check_repo.outcome == 'success' && '🎉 Repo setup looks correct' || '❌' }}
 
           PR URL: ${{ github.event.pull_request.html_url }}
           EOM
@@ -54,8 +54,8 @@ jobs:
         uses: bth-python/utils/.github/actions/update-canvas@main
         with:
           subcommand: "grade_submission"
-          grade: ${{ steps.check_files.outcome == 'success' && 'G' || 'Ux' }}
+          grade: ${{ steps.check_repo.outcome == 'success' && 'G' || 'Ux' }}
           comment: "${{ steps.created_comment.outputs.myoutput }}"
           canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
           course_id: ${{inputs.course_id}}
-          assignment_id: ${{ steps.resolve.outputs.assignment }}
+          assignment_id: ${{ steps.get-canvas-assignment-id.outputs.assignment }}
