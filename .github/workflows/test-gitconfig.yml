@@ -61,3 +61,41 @@ jobs:
           course_id: ${{inputs.course_id}}
           assignment_id: ${{ steps.resolve.outputs.assignment }}
           student_id: ${{ steps.get-canvas-student-id.outputs.canvas_student_id }}
+
+      - name: Put label on PR about grade
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.READ_ORG_TOKEN }}
+          script: |
+            const label = `${{ steps.check_repo.outcome == 'success' && 'G' || 'Ux' }}.`;
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              labels: label
+            });          
+
+      - name: Put comment in PR about submission
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.READ_ORG_TOKEN }}
+          script: |
+            const commentBody = `✅ Assignment submitted to Canvas. The connection between GitHub and Canvas is working properly.`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: commentBody
+            });
+
+      - name: Close PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.READ_ORG_TOKEN }}
+          script: |
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              state: 'closed'
+            });
