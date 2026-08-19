@@ -23,7 +23,7 @@ jobs:
           user="${{ github.event.sender.login }}"
           echo "Checking if $user is in teacher team..."
 
-          status=$(gh api orgs/bth-algo/teams/teacher/memberships/$user --jq '.state' 2>/dev/null || echo "not_found")
+          status=$(gh api orgs/bth-python/teams/teacher/memberships/$user --jq '.state' 2>/dev/null || echo "not_found")
 
           if [[ "$status" == "active" ]]; then
             echo "is_teacher=true" >> "$GITHUB_OUTPUT"
@@ -50,20 +50,20 @@ jobs:
 
       - name: Get Student Canvas ID
         id: get-canvas-id
-        uses: bth-algo/utils2/.github/actions/get-student-canvas-id@main
+        uses: bth-python/utils/.github/actions/get-student-canvas-id@main
         with:
           course_id: ${{ inputs.course_id }}
           canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
           read_org_token: ${{ secrets.READ_ORG_TOKEN }}
           github_login: ${{ github.event.pull_request.user.login }}
 
-      - uses: bth-algo/utils2/.github/actions/get-assignment-id@main
+      - uses: bth-python/utils/.github/actions/get-assignment-id@main
         id: resolve
         with:
           available_assignments: ${{ inputs.available_assignments }}
 
       - name: Update Canvas with closed PR
-        uses: bth-algo/utils2/.github/actions/update-canvas@main
+        uses: bth-python/utils/.github/actions/update-canvas@main
         with:
           subcommand: "grade_submission"
           grade: "null"
@@ -91,20 +91,20 @@ jobs:
 
       - name: Get Student Canvas ID
         id: get-canvas-id
-        uses: bth-algo/utils2/.github/actions/get-student-canvas-id@main
+        uses: bth-python/utils/.github/actions/get-student-canvas-id@main
         with:
           course_id: ${{ inputs.course_id }}
           canvas_api_token: ${{ secrets.CANVAS_API_TOKEN }}
           read_org_token: ${{ secrets.READ_ORG_TOKEN }}
           github_login: ${{ github.event.pull_request.user.login }}
 
-      - uses: bth-algo/utils2/.github/actions/get-assignment-id@main
+      - uses: bth-python/utils/.github/actions/get-assignment-id@main
         id: resolve
         with:
           available_assignments: ${{ inputs.available_assignments }}
 
       - name: Update Canvas with closed PR
-        uses: bth-algo/utils2/.github/actions/update-canvas@main
+        uses: bth-python/utils/.github/actions/update-canvas@main
         with:
           subcommand: "grade_submission"
           grade: "Ux"

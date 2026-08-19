@@ -66,14 +66,14 @@ jobs:
         if: steps.check_repo.outcome == 'success'
         uses: actions-ecosystem/action-add-labels@v1
         with:
-          github_token: ${{ secrets.read_org_token }}
+          github_token: ${{ secrets.READ_ORG_TOKEN }}
           labels: "Grade: G"
 
       - name: Add grade label Ux
         if: steps.check_repo.outcome != 'success'
         uses: actions-ecosystem/action-add-labels@v1
         with:
-          github_token: ${{ secrets.read_org_token }}
+          github_token: ${{ secrets.READ_ORG_TOKEN }}
           labels: "Grade: Ux"
 
       - name: Put comment in PR about submission
