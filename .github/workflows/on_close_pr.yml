@@ -81,7 +81,7 @@ jobs:
     if: needs.check-team.outputs.is_teacher != 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Avsluta om test-config
+      - name: Avsluta om test-gitconfig
         if: github.event.pull_request.head.ref == 'bth/submit/test-gitconfig'
         run: exit 0
 
