@@ -77,11 +77,14 @@ jobs:
           read_org_token: "${{ secrets.READ_ORG_TOKEN }}"
 
   student-closed:
-    if: github.head_ref != 'bth/submit/test-gitconfig'
     needs: check-team
     if: needs.check-team.outputs.is_teacher != 'true'
     runs-on: ubuntu-latest
     steps:
+      - name: Avsluta om test-config
+        if: github.event.pull_request.head.ref == 'bth/submit/test-gitconfig'
+        run: exit 0
+
       - name: Create comment
         id: created_comment
         run: |
