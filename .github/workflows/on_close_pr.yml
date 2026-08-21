@@ -10,6 +10,7 @@ on:
 
 jobs:
   check-team:
+    if: github.head_ref != 'bth/submit/test-gitconfig'
     runs-on: ubuntu-latest
     outputs:
       is_teacher: ${{ steps.check-team.outputs.is_teacher }}
