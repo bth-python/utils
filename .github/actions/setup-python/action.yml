@@ -5,7 +5,7 @@ runs:
   steps:
     - uses: actions/checkout@v4
       with:
-        repository: bth-python/python-abcd25
+        repository: bth-python/template
 
     - uses: actions/checkout@v4
       with:
