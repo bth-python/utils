@@ -50,8 +50,8 @@ jobs:
 
       - name: Download ruff config
         run: |
-          curl -L \
-            https://raw.githubusercontent.com/bth-python/template/main/ruff.toml \
+          curl -sSL \
+          https://raw.githubusercontent.com/bth-python/template/refs/heads/main/ruff.toml \
             -o ruff.toml
 
       - name: "Validate code"
