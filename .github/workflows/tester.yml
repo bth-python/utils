@@ -47,13 +47,11 @@ jobs:
     steps:
       - name: setup-python
         uses: bth-python/utils/.github/actions/setup-python@main
-        with:
-          python-version: "3.13"
 
       - name: Download ruff config
         run: |
           curl -L \
-            https://github.com/bth-python/template/blob/fa9e310dbd674db8e1af2aada2d607e8ab138d12/ruff.toml \
+            https://raw.githubusercontent.com/bth-python/template/main/ruff.toml \
             -o ruff.toml
 
       - name: "Validate code"
