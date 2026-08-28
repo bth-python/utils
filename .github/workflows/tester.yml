@@ -53,7 +53,7 @@ jobs:
       - name: Download ruff config
         run: |
           curl -L \
-            https://raw.githubusercontent.com/bth-python/template/ruff.toml \
+            https://github.com/bth-python/template/blob/fa9e310dbd674db8e1af2aada2d607e8ab138d12/ruff.toml \
             -o ruff.toml
 
       - name: "Validate code"
