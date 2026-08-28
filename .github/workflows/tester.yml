@@ -47,6 +47,8 @@ jobs:
     steps:
       - name: setup-python
         uses: bth-python/utils/.github/actions/setup-python@main
+        with:
+          python-version: "3.13"
 
       - name: "Validate code"
         run: uv run ruff check $(echo "${{ matrix.folder }}" | sed 's/tests/src/')
