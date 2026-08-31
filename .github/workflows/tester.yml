@@ -63,3 +63,8 @@ jobs:
           if uv run tester -f -e ${{ matrix.folder }}; then
             uv run tester -f -e ${{ matrix.folder }}
           fi
+          # Kolla om den extra testfilen finns innan den körs
+          if [ -f "${{ matrix.folder }}/extra*.py" ]; then
+            echo "Running extra tests..."
+            uv run tester -f -e ${{ matrix.folder }}
+          fi
