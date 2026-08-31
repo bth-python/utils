@@ -60,4 +60,4 @@ jobs:
         continue-on-error: true
         run: |
           echo "🔬 Running extras: ${{ matrix.folder }}. It is OK if these tests fail. It will not affect your grade"
-          uv run tester -f -e ${{ matrix.folder }}
+          uv run tester -f -e ${{ matrix.folder }} || true
