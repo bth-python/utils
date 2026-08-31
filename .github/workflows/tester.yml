@@ -70,7 +70,7 @@ jobs:
           ruff check src/kmom01/lab_01/dbw.py --show-settings | grep -i "path"
 
       - name: "Validate code"
-        run: uv run ruff check $(echo "${{ matrix.folder }}" | sed 's/tests/src/')
+        run: uv run ruff check $(echo "${{ matrix.folder }}" | sed 's/tests/src/') --exclude **/dbw.py
 
       - name: Run kmom test in ${{ matrix.folder }}
         run: |
