@@ -166,7 +166,7 @@ jobs:
 
   submit-canvas:
     needs: [validate-tag, run-tester]
-    if: needs.validate-tag.outputs.workflow_passed == 'true' && needs.run-tester.result == 'success'
+    if: needs.validate-tag.outputs.workflow_passed == 'true' && needs.run-tester.outputs.tests_passed == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Add "Tests passed" label

@@ -10,7 +10,6 @@ on:
 
 jobs:
   check-team:
-    if: github.head_ref != 'bth/submit/test-gitconfig'
     runs-on: ubuntu-latest
     outputs:
       is_teacher: ${{ steps.check-team.outputs.is_teacher }}
@@ -39,10 +38,6 @@ jobs:
     if: needs.check-team.outputs.is_teacher == 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Avsluta om test-gitconfig
-        if: github.event.pull_request.head.ref == 'bth/submit/test-gitconfig'
-        run: exit 0
-  
       - name: Create comment
         id: created_comment
         run: |
@@ -84,10 +79,6 @@ jobs:
     if: needs.check-team.outputs.is_teacher != 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Avsluta om test-gitconfig
-        if: github.event.pull_request.head.ref == 'bth/submit/test-gitconfig'
-        run: exit 0
-
       - name: Create comment
         id: created_comment
         run: |
